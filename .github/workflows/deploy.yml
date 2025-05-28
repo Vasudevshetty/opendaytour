@@ -39,4 +39,4 @@ jobs:
           ssh -v vasudevshetty@server.fauxigent.com exit
 
           # Deploy files
-          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r dist/* vasudevshetty@server.fauxigent.com:/var/www/test3.fauxigent.com
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no -r dist/* vasudevshetty@server.fauxigent.com:/var/www/vasudevshetty.xyz
