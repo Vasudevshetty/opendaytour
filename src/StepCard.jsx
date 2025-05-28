@@ -9,18 +9,58 @@ const StepCard = ({ step, onPrev, onNext, isFirst, isLast, steps }) => {
 
   return (
     <>
-      <div className="fixed top-5 right-4 z-30 flex flex-col items-end gap-2 pointer-events-none select-none">
-        <div className="flex items-center bg-gray-900/90 border border-gray-700 rounded-full px-5 py-2 shadow-lg text-gray-100 font-semibold text-lg backdrop-blur-sm">
-          Hop {hopNumber}
-          {totalHops ? ` / ${totalHops}` : ""}
+      <div className="fixed top-4 right-4 z-30 flex flex-col items-end gap-2 pointer-events-none select-none">
+        <div className="flex items-center gap-2 bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 rounded-full px-4 py-2 text-gray-100 font-medium text-sm tracking-wide backdrop-blur-md">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="#38bdf8"
+            stroke="none"
+            className="mr-1"
+          >
+            <circle cx="12" cy="12" r="6" />
+            <circle
+              cx="12"
+              cy="12"
+              r="10"
+              fill="none"
+              stroke="#38bdf8"
+              strokeWidth="2.2"
+            />
+          </svg>
+
+          <span>Spot</span>
+          <span className="ml-1 text-cyan-400">{hopNumber}</span>
+          {totalHops ? (
+            <span className="text-gray-400">/ {totalHops}</span>
+          ) : null}
         </div>
         {typeof stepsRemaining === "number" && (
-          <div className="flex items-center bg-gray-800/90 border border-gray-700 rounded-full px-4 py-1 shadow text-gray-300 font-medium text-sm backdrop-blur-sm">
-            {stepsRemaining === 0
-              ? "Final step"
-              : `${stepsRemaining} step${
-                  stepsRemaining === 1 ? "" : "s"
-                } remaining`}
+          <div className="flex items-center gap-2 bg-gray-800/95 shadow rounded-full px-4 py-2 text-cyan-300 font-medium text-sm backdrop-blur-md">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#38bdf8"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M17 1v4a2 2 0 0 0 2 2h4" />
+              <path d="M7 23v-4a2 2 0 0 0-2-2H1" />
+              <path d="M20.49 9A9 9 0 0 1 15 20.94" />
+              <path d="M3.51 15A9 9 0 0 1 9 3.06" />
+            </svg>
+            {stepsRemaining === 0 ? (
+              <span className="text-green-400 font-medium">Final step</span>
+            ) : (
+              <span className="text-xs">
+                {stepsRemaining} spot
+                {stepsRemaining === 1 ? "" : "s"} left
+              </span>
+            )}
           </div>
         )}
       </div>
@@ -40,7 +80,7 @@ const StepCard = ({ step, onPrev, onNext, isFirst, isLast, steps }) => {
             borderRight: "1px solid #22223b",
           }}
         >
-          <h2 className="text-3xl font-extrabold mb-4 text-center text-gray-100 drop-shadow-lg">
+          <h2 className="text-2xl font-extrabold mb-4 text-center text-gray-100 drop-shadow-lg">
             {step.name}
           </h2>
           <p className="text-gray-300 mb-6 text-center text-base leading-relaxed">
