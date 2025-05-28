@@ -253,7 +253,7 @@ const StepCard = ({
               Previous
             </button>
             <button
-              className="flex items-center gap-2 cursor-pointer bg-green-500 text-white px-5 py-2 rounded-full shadow hover:bg-blue-800 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
+              className="flex items-center gap-2 cursor-pointer bg-green-500 text-white px-5 py-2 rounded-full shadow hover:bg-green-600 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
               onClick={onNext}
               disabled={isLast}
             >
