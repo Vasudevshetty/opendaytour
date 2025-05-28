@@ -223,73 +223,50 @@ const MapWithTour = ({
         className="w-full h-screen fixed top-0 left-0 z-10"
         style={{ minHeight: "60vh" }}
       />
-      {/* Directions Card - step-by-step slider style, synced to route sub-steps */}
-      <div className="fixed top-0 left-0 right-0 z-20 flex justify-center pointer-events-none font-dm-sans tracking-tight">
+      <div className="fixed top-2 left-0 right-0 z-20 flex justify-center pointer-events-none font-dm-sans tracking-tight">
         <div
-          className="backdrop-blur-sm bg-black/90 border border-gray-700 shadow-2xl rounded-t-3xl w-full max-w-md mx-auto p-6 mb-0 pointer-events-auto flex flex-col items-center relative overflow-hidden"
+          className="backdrop-blur-md bg-black/90 rounded-full w-full mx-2 max-w-sm  py-3 px-8 mb-0 pointer-events-auto flex flex-col items-center relative overflow-hidden"
           style={{
-            boxShadow: "0 8px 32px 0 rgba(0,0,0,0.7)",
-            borderTop: "2px solid #22223b",
-            borderLeft: "1px solid #22223b",
-            borderRight: "1px solid #22223b",
-            minHeight: 120,
-            maxHeight: 220,
+            minHeight: 60,
+            maxHeight: 140,
           }}
         >
-          <h3 className="text-lg font-extrabold mb-2 text-center text-cyan-300 drop-shadow-lg">
-            Spot {currentStep + 1} of {steps.length} — Step {subStep + 1} of{" "}
-            {legSteps}
+          <h3 className="text-[0.6rem] font-bold mb-1 text-center text-cyan-300 tracking-wide uppercase letter-spacing-1 drop-shadow">
+            Step {subStep + 1} of {legSteps}
           </h3>
           <div className="flex items-center justify-between w-full gap-2">
             <button
-              className="bg-gray-800 text-gray-200 px-4 py-2 rounded-full shadow hover:bg-gray-700 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
+              className="bg-gray-800 text-gray-200 px-2 py-1 rounded-full shadow hover:bg-gray-700 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold"
               onClick={handlePrev}
               disabled={currentStep === 0 && subStep === 0}
+              style={{ minWidth: 48 }}
             >
-              Previous
+              Prev
             </button>
-            <div className="flex-1 text-center text-cyan-400 font-bold text-base px-2 py-1 flex flex-col items-center">
-              <span className="mb-1">
-                {directions.length > 0 && (
-                  <svg
-                    width="28"
-                    height="28"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#38bdf8"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="mx-auto"
-                  >
-                    <path d="M12 19V5" />
-                    <path d="M5 12l7-7 7 7" />
-                  </svg>
-                )}
-              </span>
-              <span>
+            <div className="flex-1 text-center text-cyan-200 font-medium text-xl px-1 py-1 flex flex-col items-center min-h-[28px]">
+              <span style={{ wordBreak: "break-word", lineHeight: "1.4" }}>
                 {directions.length > 0
                   ? directions[directionStepIdx + subStep]
                   : "No directions available."}
               </span>
             </div>
             <button
-              className="bg-green-500 text-white px-4 py-2 rounded-full shadow hover:bg-blue-800 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
+              className="bg-cyan-600 text-white px-2 py-1 rounded-full shadow hover:bg-cyan-800 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold"
               onClick={handleNext}
               disabled={
                 currentStep === steps.length - 2 && subStep === legSteps - 1
               }
+              style={{ minWidth: 48 }}
             >
               Next
             </button>
           </div>
-          {/* Slider dots for sub-steps */}
-          <div className="flex gap-1 mt-3">
+          <div className="flex gap-1 mt-2">
             {Array.from({ length: legSteps }).map((_, idx) => (
               <span
                 key={idx}
-                className={`w-2 h-2 rounded-full ${
-                  idx === subStep ? "bg-cyan-400" : "bg-gray-500"
+                className={`w-1.5 h-1.5 rounded-full ${
+                  idx === subStep ? "bg-cyan-400" : "bg-gray-600"
                 } inline-block transition-all`}
               />
             ))}
