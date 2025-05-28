@@ -1,15 +1,43 @@
+import { useState, useEffect } from "react";
+import MapWithTour from "./MapWithTour";
+import StepCard from "./StepCard";
+import { tourSteps } from "./data/tourSteps";
+
 function App() {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [userLocation, setUserLocation] = useState(null);
+
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLocation([pos.coords.longitude, pos.coords.latitude]);
+        },
+        () => {},
+        { enableHighAccuracy: true }
+      );
+    }
+  }, []);
+
+  const handlePrev = () => setCurrentStep((s) => Math.max(0, s - 1));
+  const handleNext = () =>
+    setCurrentStep((s) => Math.min(tourSteps.length - 1, s + 1));
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <img
-        src="https://github.com/fauxigent.png"
-        alt="Fauxigent"
-        className="w-32 h-32 rounded-full mb-4"
+    <div className="relative w-full h-screen bg-gray-100">
+      <MapWithTour
+        steps={tourSteps}
+        currentStep={currentStep}
+        setCurrentStep={setCurrentStep}
+        userLocation={userLocation}
       />
-      <h1 className="text-2xl font-bold mb-2">Welcome to React</h1>
-      <p className="text-center max-w-md">
-        React template with tailwincss and vitejs
-      </p>
+      <StepCard
+        step={tourSteps[currentStep]}
+        onPrev={handlePrev}
+        onNext={handleNext}
+        isFirst={currentStep === 0}
+        isLast={currentStep === tourSteps.length - 1}
+      />
     </div>
   );
 }
