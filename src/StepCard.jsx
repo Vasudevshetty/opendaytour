@@ -1,7 +1,18 @@
 import { motion } from "framer-motion";
 
-const StepCard = ({ step, onPrev, onNext, isFirst, isLast, steps }) => {
-  const hopNumber = step?.number || step?.index || step?.hop || 1;
+const StepCard = ({
+  step,
+  onPrev,
+  onNext,
+  isFirst,
+  isLast,
+  steps,
+  currentStepIndex,
+  onRecenter,
+}) => {
+  // Use currentStepIndex for dynamic step number
+  const hopNumber =
+    typeof currentStepIndex === "number" ? currentStepIndex + 1 : 1;
   const totalHops = Array.isArray(steps) ? steps.length : undefined;
   const stepsRemaining = totalHops
     ? Math.max(totalHops - hopNumber, 0)
@@ -9,7 +20,7 @@ const StepCard = ({ step, onPrev, onNext, isFirst, isLast, steps }) => {
 
   return (
     <>
-      <div className="fixed top-4 right-4 z-30 flex flex-col items-end gap-2 pointer-events-none select-none">
+      <div className="fixed top-4 right-4 z-30 flex flex-col items-end gap-2 pointer-events-auto select-none">
         <div className="flex items-center gap-2 bg-black rounded-full px-4 py-2 text-gray-100 font-medium text-sm tracking-wide backdrop-blur-md">
           <svg
             width="22"
@@ -57,11 +68,38 @@ const StepCard = ({ step, onPrev, onNext, isFirst, isLast, steps }) => {
               <span className="text-green-400 font-medium">Final step</span>
             ) : (
               <span className="text-xs">
-                {stepsRemaining} spot
-                {stepsRemaining === 1 ? "" : "s"} left
+                {stepsRemaining} step
+                {stepsRemaining === 1 ? "" : "s"} remaining
               </span>
             )}
           </div>
+        )}
+        {/* Current Location Button - below status, aligned left */}
+        {onRecenter && (
+          <button
+            className="mt-2 bg-red-500 cursor-pointer hover:bg-red-600 text-white rounded-full p-3 shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-400 flex items-center justify-center"
+            onClick={onRecenter}
+            title="Go to current location"
+            style={{ boxShadow: "0 0 6px 2px #EF4444AA" }}
+          >
+            <svg
+              width="28"
+              height="28"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="2" x2="12" y2="6" />
+              <line x1="12" y1="18" x2="12" y2="22" />
+              <line x1="2" y1="12" x2="6" y2="12" />
+              <line x1="18" y1="12" x2="22" y2="12" />
+            </svg>
+            <span className="sr-only">Current Location</span>
+          </button>
         )}
       </div>
       <motion.div
@@ -88,7 +126,7 @@ const StepCard = ({ step, onPrev, onNext, isFirst, isLast, steps }) => {
           </p>
           <div className="flex gap-4 w-full justify-between mt-auto">
             <button
-              className="flex items-center gap-2 bg-gray-800 text-gray-200 px-5 py-2 rounded-full shadow hover:bg-gray-700 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
+              className="flex items-center cursor-pointer gap-2 bg-gray-800 text-gray-200 px-5 py-2 rounded-full shadow hover:bg-gray-700 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
               onClick={onPrev}
               disabled={isFirst}
             >
@@ -110,7 +148,7 @@ const StepCard = ({ step, onPrev, onNext, isFirst, isLast, steps }) => {
               Previous
             </button>
             <button
-              className="flex items-center gap-2 bg-green-500 text-white px-5 py-2 rounded-full shadow hover:bg-blue-800 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
+              className="flex items-center gap-2 cursor-pointer bg-green-500 text-white px-5 py-2 rounded-full shadow hover:bg-blue-800 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
               onClick={onNext}
               disabled={isLast}
             >

@@ -6,6 +6,7 @@ import { tourSteps } from "./data/tourSteps";
 function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [userLocation, setUserLocation] = useState(null);
+  const [recenterKey, setRecenterKey] = useState(0); // for triggering recenter
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -23,6 +24,9 @@ function App() {
   const handleNext = () =>
     setCurrentStep((s) => Math.min(tourSteps.length - 1, s + 1));
 
+  // Handler for recentering map
+  const handleRecenter = () => setRecenterKey((k) => k + 1);
+
   return (
     <div className="relative w-full h-screen bg-gray-100">
       <MapWithTour
@@ -30,6 +34,7 @@ function App() {
         currentStep={currentStep}
         setCurrentStep={setCurrentStep}
         userLocation={userLocation}
+        recenterKey={recenterKey}
       />
       <StepCard
         step={tourSteps[currentStep]}
@@ -38,6 +43,8 @@ function App() {
         isFirst={currentStep === 0}
         isLast={currentStep === tourSteps.length - 1}
         steps={tourSteps}
+        currentStepIndex={currentStep}
+        onRecenter={handleRecenter}
       />
     </div>
   );

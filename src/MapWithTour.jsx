@@ -31,7 +31,13 @@ function createMarkerElement(isActive) {
   return el;
 }
 
-const MapWithTour = ({ steps, currentStep, setCurrentStep, userLocation }) => {
+const MapWithTour = ({
+  steps,
+  currentStep,
+  setCurrentStep,
+  userLocation,
+  recenterKey,
+}) => {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -111,6 +117,19 @@ const MapWithTour = ({ steps, currentStep, setCurrentStep, userLocation }) => {
     };
     // eslint-disable-next-line
   }, [steps, currentStep, userLocation]);
+
+  // Add effect to recenter map to userLocation when recenterKey changes
+  useEffect(() => {
+    if (mapRef.current && userLocation) {
+      mapRef.current.flyTo({
+        center: userLocation,
+        zoom: 18,
+        pitch: 75,
+        bearing: 20,
+        essential: true,
+      });
+    }
+  }, [recenterKey, userLocation]);
 
   return (
     <div
