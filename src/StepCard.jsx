@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useState } from "react";
 
 const StepCard = ({
   step,
@@ -17,6 +18,18 @@ const StepCard = ({
   const stepsRemaining = totalHops
     ? Math.max(totalHops - hopNumber, 0)
     : undefined;
+  const [expanded, setExpanded] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const images = Array.isArray(step.images) ? step.images : [];
+
+  const handlePrevImage = (e) => {
+    e.stopPropagation();
+    setCarouselIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+  const handleNextImage = (e) => {
+    e.stopPropagation();
+    setCarouselIndex((prev) => (prev + 1) % images.length);
+  };
 
   return (
     <>
@@ -116,14 +129,106 @@ const StepCard = ({
             borderTop: "2px solid #22223b",
             borderLeft: "1px solid #22223b",
             borderRight: "1px solid #22223b",
+            minHeight: expanded ? 300 : 250,
+            transition: "min-height 0.3s cubic-bezier(0.4,0,0.2,1)",
           }}
         >
           <h2 className="text-2xl font-extrabold mb-4 text-center text-gray-100 drop-shadow-lg">
             {step.name}
           </h2>
-          <p className="text-gray-300 mb-6 text-center text-base leading-relaxed">
+          <p className="text-gray-300 mb-4 text-center text-base leading-relaxed">
             {step.description}
           </p>
+          <button
+            className="mb-4 px-4 py-1 rounded-full bg-cyan-700 hover:bg-cyan-600 text-white text-sm font-semibold shadow transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400"
+            onClick={() => setExpanded((v) => !v)}
+            style={{ pointerEvents: "auto" }}
+          >
+            {expanded ? "Hide images" : "View more"}
+          </button>
+          <motion.div
+            className="w-full flex flex-col items-center mb-4 overflow-hidden"
+            initial={false}
+            animate={{
+              height: expanded ? (images.length ? 180 : 0) : 0,
+              opacity: expanded ? 1 : 0,
+            }}
+            transition={{
+              height: { duration: 0.45, ease: [0.4, 0, 0.2, 1] },
+              opacity: { duration: 0.25 },
+            }}
+            style={{ display: expanded && images.length ? "flex" : "none" }}
+          >
+            {images.length > 0 && (
+              <div className="relative w-64 h-40 flex items-center justify-center">
+                <img
+                  src={images[carouselIndex]}
+                  alt={`Step image ${carouselIndex + 1}`}
+                  className="rounded-2xl w-full h-full object-cover border-2 border-cyan-400 shadow-lg"
+                  style={{ transition: "opacity 0.3s" }}
+                />
+                {images.length > 1 && (
+                  <>
+                    <button
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full p-1 hover:bg-cyan-700 transition"
+                      onClick={handlePrevImage}
+                      tabIndex={-1}
+                    >
+                      <svg
+                        width="22"
+                        height="22"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M15 19l-7-7 7-7"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full p-1 hover:bg-cyan-700 transition"
+                      onClick={handleNextImage}
+                      tabIndex={-1}
+                    >
+                      <svg
+                        width="22"
+                        height="22"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </button>
+                  </>
+                )}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  {images.map((_, idx) => (
+                    <span
+                      key={idx}
+                      className={`w-2 h-2 rounded-full ${
+                        idx === carouselIndex ? "bg-cyan-400" : "bg-gray-500"
+                      } inline-block`}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            {images.length === 0 && (
+              <div className="w-64 h-32 bg-gray-800 rounded-2xl flex items-center justify-center text-gray-300 border-2 border-cyan-400 shadow-lg mb-2">
+                No images available
+              </div>
+            )}
+          </motion.div>
           <div className="flex gap-4 w-full justify-between mt-auto">
             <button
               className="flex items-center cursor-pointer gap-2 bg-gray-800 text-gray-200 px-5 py-2 rounded-full shadow hover:bg-gray-700 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
