@@ -37,6 +37,7 @@ function App() {
         onNext={handleNext}
         isFirst={currentStep === 0}
         isLast={currentStep === tourSteps.length - 1}
+        steps={tourSteps}
       />
     </div>
   );

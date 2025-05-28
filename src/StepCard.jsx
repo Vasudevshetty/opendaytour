@@ -1,14 +1,28 @@
 import { motion } from "framer-motion";
 
-const StepCard = ({ step, onPrev, onNext, isFirst, isLast }) => {
+const StepCard = ({ step, onPrev, onNext, isFirst, isLast, steps }) => {
   const hopNumber = step?.number || step?.index || step?.hop || 1;
-  const totalHops = step?.total || step?.totalHops || undefined;
+  const totalHops = Array.isArray(steps) ? steps.length : undefined;
+  const stepsRemaining = totalHops
+    ? Math.max(totalHops - hopNumber, 0)
+    : undefined;
 
   return (
     <>
-      <div className="fixed top-5 right-4  z-30 flex items-center justify-center bg-gray-900/90 border border-gray-700 rounded-full px-5 py-2 shadow-lg text-gray-100 font-semibold text-lg pointer-events-none select-none backdrop-blur-sm">
-        Hop {hopNumber}
-        {totalHops ? ` / ${totalHops}` : ""}
+      <div className="fixed top-5 right-4 z-30 flex flex-col items-end gap-2 pointer-events-none select-none">
+        <div className="flex items-center bg-gray-900/90 border border-gray-700 rounded-full px-5 py-2 shadow-lg text-gray-100 font-semibold text-lg backdrop-blur-sm">
+          Hop {hopNumber}
+          {totalHops ? ` / ${totalHops}` : ""}
+        </div>
+        {typeof stepsRemaining === "number" && (
+          <div className="flex items-center bg-gray-800/90 border border-gray-700 rounded-full px-4 py-1 shadow text-gray-300 font-medium text-sm backdrop-blur-sm">
+            {stepsRemaining === 0
+              ? "Final step"
+              : `${stepsRemaining} step${
+                  stepsRemaining === 1 ? "" : "s"
+                } remaining`}
+          </div>
+        )}
       </div>
       <motion.div
         initial={{ y: 100, opacity: 0 }}
