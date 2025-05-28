@@ -10,7 +10,7 @@ const StepCard = ({ step, onPrev, onNext, isFirst, isLast, steps }) => {
   return (
     <>
       <div className="fixed top-4 right-4 z-30 flex flex-col items-end gap-2 pointer-events-none select-none">
-        <div className="flex items-center gap-2 bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 rounded-full px-4 py-2 text-gray-100 font-medium text-sm tracking-wide backdrop-blur-md">
+        <div className="flex items-center gap-2 bg-black rounded-full px-4 py-2 text-gray-100 font-medium text-sm tracking-wide backdrop-blur-md">
           <svg
             width="22"
             height="22"
@@ -37,7 +37,7 @@ const StepCard = ({ step, onPrev, onNext, isFirst, isLast, steps }) => {
           ) : null}
         </div>
         {typeof stepsRemaining === "number" && (
-          <div className="flex items-center gap-2 bg-gray-800/95 shadow rounded-full px-4 py-2 text-cyan-300 font-medium text-sm backdrop-blur-md">
+          <div className="flex items-center gap-2 bg-black shadow rounded-full px-4 py-2 text-cyan-300 font-medium text-sm backdrop-blur-md">
             <svg
               width="18"
               height="18"
