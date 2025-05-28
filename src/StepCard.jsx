@@ -6,7 +6,7 @@ const StepCard = ({ step, onPrev, onNext, isFirst, isLast }) => {
 
   return (
     <>
-      <div className="fixed top-5 right-1 -translate-x-1/2 z-30 flex items-center justify-center bg-gray-900/90 border border-gray-700 rounded-full px-5 py-2 shadow-lg text-gray-100 font-semibold text-base pointer-events-none select-none backdrop-blur-sm">
+      <div className="fixed top-5 right-4  z-30 flex items-center justify-center bg-gray-900/90 border border-gray-700 rounded-full px-5 py-2 shadow-lg text-gray-100 font-semibold text-lg pointer-events-none select-none backdrop-blur-sm">
         Hop {hopNumber}
         {totalHops ? ` / ${totalHops}` : ""}
       </div>
@@ -26,7 +26,7 @@ const StepCard = ({ step, onPrev, onNext, isFirst, isLast }) => {
             borderRight: "1px solid #22223b",
           }}
         >
-          <h2 className="text-2xl font-extrabold mb-2 text-center text-gray-100 drop-shadow-lg">
+          <h2 className="text-3xl font-extrabold mb-4 text-center text-gray-100 drop-shadow-lg">
             {step.name}
           </h2>
           <p className="text-gray-300 mb-6 text-center text-base leading-relaxed">
