@@ -11,6 +11,26 @@ const markerColors = {
   user: "#EF4444", // red
 };
 
+// Helper to create a styled marker element
+function createMarkerElement(isActive) {
+  const el = document.createElement("div");
+  el.className = isActive ? "marker marker-active" : "marker";
+  el.style.width = isActive ? "26px" : "20px";
+  el.style.height = isActive ? "26px" : "20px";
+  el.style.borderRadius = "50%";
+  el.style.background = isActive ? markerColors.active : markerColors.inactive;
+  el.style.border = isActive ? "4px solid #fff" : "2px solid #fff";
+  el.style.boxShadow = isActive
+    ? "0 0 10px 2px #2563EB88"
+    : "0 0 4px rgba(0,0,0,0.2)";
+  el.style.cursor = "pointer";
+  if (isActive) {
+    el.style.transform = "scale(1.1)";
+    el.style.zIndex = "2";
+  }
+  return el;
+}
+
 const MapWithTour = ({ steps, currentStep, setCurrentStep, userLocation }) => {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -23,7 +43,9 @@ const MapWithTour = ({ steps, currentStep, setCurrentStep, userLocation }) => {
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/streets-v11",
         center: steps[0].coordinate,
-        zoom: 15,
+        zoom: 18, // further increased zoom
+        pitch: 75, // more human POV tilt
+        bearing: 20, // slight rotation for perspective
       });
       mapRef.current.on("load", () => {
         mapRef.current.addSource("route", {
@@ -52,17 +74,7 @@ const MapWithTour = ({ steps, currentStep, setCurrentStep, userLocation }) => {
     // Markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = steps.map((step, idx) => {
-      const el = document.createElement("div");
-      el.className = "marker";
-      el.style.width = "20px";
-      el.style.height = "20px";
-      el.style.borderRadius = "50%";
-      el.style.background =
-        idx === currentStep ? markerColors.active : markerColors.inactive;
-      el.style.border =
-        idx === currentStep ? "3px solid #fff" : "2px solid #fff";
-      el.style.boxShadow = "0 0 4px rgba(0,0,0,0.2)";
-      el.style.cursor = "pointer";
+      const el = createMarkerElement(idx === currentStep);
       el.addEventListener("click", () => setCurrentStep(idx));
       const marker = new mapboxgl.Marker(el)
         .setLngLat(step.coordinate)
@@ -86,7 +98,12 @@ const MapWithTour = ({ steps, currentStep, setCurrentStep, userLocation }) => {
     }
     // Center map on current step
     if (mapRef.current && steps[currentStep]) {
-      mapRef.current.flyTo({ center: steps[currentStep].coordinate, zoom: 15 });
+      mapRef.current.flyTo({
+        center: steps[currentStep].coordinate,
+        zoom: 18, // further increased zoom
+        pitch: 75, // more human POV tilt
+        bearing: 20, // match initial perspective
+      });
     }
     return () => {
       markersRef.current.forEach((m) => m.remove());
