@@ -76,7 +76,10 @@ const MapWithTour = () => {
   const [geofencedStepIndex, setGeofencedStepIndex] = useState(null);
   const [showGeofenceNotification, setShowGeofenceNotification] =
     useState(false);
-  const [showGeofenceFallback, setShowGeofenceFallback] = useState(false); // Added state for fallback
+  const [showGeofenceFallback, setShowGeofenceFallback] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Added for loader
+  const [isVirtualMode, setIsVirtualMode] = useState(false); // Added for virtual tour
+
   const watchIdRef = useRef(null);
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -99,27 +102,42 @@ const MapWithTour = () => {
 
   // Get user location on mount (real-time)
   useEffect(() => {
+    if (isVirtualMode) {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+        watchIdRef.current = null;
+      }
+      setUserLocation(null); // Clear real user location
+      setGeofencedStepIndex(null); // Clear geofence state
+      setShowGeofenceNotification(false);
+      setShowGeofenceFallback(false);
+      setIsLoading(false); // Ensure loader is hidden if switching to virtual mode while loading
+      return; // Don't start watching
+    }
+    // Reset isLoading to true only if we are NOT in virtual mode and attempting to get location
+    setIsLoading(true);
     if (navigator.geolocation) {
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
-          // --- BEGIN MODIFICATION ---
           const now = Date.now();
-          // Only update userLocation state if the interval has passed
           if (
             now - lastLocationUpdateTimeRef.current >=
             locationUpdateInterval
           ) {
             setUserLocation([pos.coords.longitude, pos.coords.latitude]);
             lastLocationUpdateTimeRef.current = now;
+            setIsLoading(false); // Location acquired, hide loader
           }
-          // --- END MODIFICATION ---
         },
         (error) => {
           console.error("Error watching position:", error);
-          // Optionally handle error (e.g., set userLocation to null or show a message)
+          setIsLoading(false); // Error, hide loader, allow virtual tour
+          // Optionally, prompt for virtual tour if location fails
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
+    } else {
+      setIsLoading(false); // Geolocation not supported, hide loader, allow virtual tour
     }
 
     return () => {
@@ -127,18 +145,25 @@ const MapWithTour = () => {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
-  }, []); // Empty dependency array is correct for setup/teardown logic
+  }, [isVirtualMode, locationUpdateInterval]); // Added isVirtualMode
 
   // Geofencing logic
   useEffect(() => {
+    if (isVirtualMode) {
+      // Disable geofencing logic in virtual mode
+      setShowGeofenceNotification(false);
+      setShowGeofenceFallback(false);
+      setGeofencedStepIndex(null);
+      return;
+    }
     if (userLocation && steps.length > 0) {
       let newGeofencedIndex = null;
       let minDistance = Infinity;
 
       for (let i = 0; i < steps.length; i++) {
         const distance = haversineDistance(userLocation, steps[i].coordinate);
-        if (distance < 100) {
-          // 100 meters geofence
+        if (distance < 500) {
+          // MODIFIED: Geofence radius to 500m
           if (distance < minDistance) {
             minDistance = distance;
             newGeofencedIndex = i;
@@ -148,27 +173,30 @@ const MapWithTour = () => {
 
       if (newGeofencedIndex !== null) {
         // User is in a geofence
+        setShowGeofenceFallback(false); // Not showing fallback if geofenced
         if (geofencedStepIndex !== newGeofencedIndex) {
           setGeofencedStepIndex(newGeofencedIndex);
-          setShowGeofenceNotification(true); // Show "You are near X"
+          setShowGeofenceNotification(true);
         }
-        setShowGeofenceFallback(false); // Not showing fallback if geofenced
+        // MODIFIED: Update currentStep if user is geofenced to a new spot
+        if (currentStep !== newGeofencedIndex) {
+          setCurrentStep(newGeofencedIndex);
+        }
       } else {
         // User is NOT in any geofence, but userLocation exists
         if (geofencedStepIndex !== null) {
           setGeofencedStepIndex(null);
-          // setShowGeofenceNotification(false); // Let "You are near X" hide via its own close button or timeout
         }
-        setShowGeofenceFallback(true); // Show fallback: "You are not near any spots"
-        setShowGeofenceNotification(false); // Ensure the specific geofence notification is hidden if fallback is shown
+        setShowGeofenceFallback(true);
+        setShowGeofenceNotification(false);
       }
     } else {
       // No userLocation or no steps
-      setGeofencedStepIndex(null); // Clear any geofence
-      setShowGeofenceFallback(false); // Don't show fallback if no location data
-      setShowGeofenceNotification(false); // Don't show specific geofence notification
+      setGeofencedStepIndex(null);
+      setShowGeofenceFallback(false);
+      setShowGeofenceNotification(false);
     }
-  }, [userLocation, steps, geofencedStepIndex]);
+  }, [userLocation, steps, geofencedStepIndex, currentStep, isVirtualMode]); // MODIFIED: Added isVirtualMode
 
   // Show confetti only once when arriving at the last step
   useEffect(() => {
@@ -186,12 +214,20 @@ const MapWithTour = () => {
   // Map and marker logic (for tour steps and initial map setup)
   useEffect(() => {
     // Only initialize the map once
-    if (!mapRef.current) {
+    if (!mapRef.current && mapContainer.current && steps.length > 0) {
       mapRef.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/streets-v11",
         center: steps[0].coordinate,
         zoom: 18,
+      });
+      // Set loader to false once map is initialized, if not already done by location services
+      mapRef.current.on("load", () => {
+        if (!isVirtualMode && !userLocation) {
+          // If still waiting for location after map load, keep loader
+        } else {
+          setIsLoading(false);
+        }
       });
     }
 
@@ -284,67 +320,32 @@ const MapWithTour = () => {
         .addTo(mapRef.current);
     });
 
-    // Responsive offset for mobile
-    if (
-      !mapRef.current ||
-      !steps[currentStep] ||
-      !steps[currentStep].coordinate
-    ) {
-      return;
-    }
-
-    let centerCoord = steps[currentStep].coordinate;
-    if (
-      legs.length &&
-      legs[currentStep] &&
-      legs[currentStep].steps &&
-      legs[currentStep].steps.length > 0
-    ) {
-      // No substep logic, just use the step's coordinate
-      centerCoord = steps[currentStep].coordinate;
-    }
-
-    if (mapRef.current) {
-      // This check is slightly redundant due to the one above, but harmless
-      const map = mapRef.current;
-      const original = map.project(centerCoord);
-
-      if (!original) {
-        console.warn(
-          "Map centering useEffect: map.project(centerCoord) failed."
-        );
-        return;
-      }
-
-      const isMobile = window.innerWidth <= 640;
-      let calculatedCardHeight = 0;
-      // Use the consistent selector for the StepCard
-      const stepCardElement = document.querySelector(".fixed.bottom-0");
-      if (stepCardElement) {
-        calculatedCardHeight = stepCardElement.offsetHeight;
-      } else {
-        // Consistent fallback logic
-        calculatedCardHeight = isMobile ? 200 : 140;
-      }
-      const offsetY = isMobile ? calculatedCardHeight / 2 : 0;
-      const newCenter = map.unproject([original.x, original.y - offsetY]);
-      map.jumpTo({
-        center: newCenter,
-        zoom: 19.5,
-        pitch: 60,
-        bearing: 20,
-        essential: true,
-      });
-    }
+    // After markers are processed and map is likely ready for interaction
+    // This specific isLoading check here might be redundant if handled by map.on('load') and location useEffect
+    // if (isLoading && mapRef.current) {
+    //   setIsLoading(false);
+    // }
 
     return () => {
       markersRef.current.forEach((m) => m.remove());
       // User marker and popup cleanup will be handled in their own useEffect
     };
-  }, [steps, currentStep, legs]); // MODIFIED: Removed userLocation from deps
+  }, [steps, currentStep, legs, isLoading, isVirtualMode, userLocation]); // MODIFIED: Added userLocation
 
   // useEffect for user location marker and popup
   useEffect(() => {
+    if (isVirtualMode) {
+      // Hide user marker in virtual mode
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+        userMarkerRef.current = null;
+      }
+      if (userLocationPopupRef.current) {
+        userLocationPopupRef.current.remove();
+        userLocationPopupRef.current = null;
+      }
+      return;
+    }
     if (!mapRef.current) return; // Ensure map is initialized
 
     if (userLocation) {
@@ -405,7 +406,26 @@ const MapWithTour = () => {
         userLocationPopupRef.current = null;
       }
     };
-  }, [userLocation]); // This effect ONLY depends on userLocation
+  }, [userLocation, isVirtualMode]); // Added isVirtualMode
+
+  // NEW useEffect: Follow user's location when geofenced
+  useEffect(() => {
+    if (
+      isVirtualMode ||
+      !mapRef.current ||
+      !userLocation ||
+      geofencedStepIndex === null
+    ) {
+      return; // Don't follow user in virtual mode or if conditions not met
+    }
+    // This effect should only run if NOT in virtual mode.
+    const map = mapRef.current;
+    map.flyTo({
+      center: userLocation,
+      zoom: 18,
+      essential: true,
+    });
+  }, [userLocation, geofencedStepIndex, steps, isVirtualMode]); // MODIFIED: Added isVirtualMode
 
   useEffect(() => {
     async function fetchRoute() {
@@ -453,8 +473,14 @@ const MapWithTour = () => {
     if (mapRef.current && steps.length > 1) fetchRoute();
   }, [steps]);
 
-  // When currentStep changes, always center the map on the step's coordinate
+  // When currentStep changes, fly to the step's coordinate IF NOT actively geofenced and following user.
   useEffect(() => {
+    // MODIFIED: Conditional execution and updated dependencies
+    if (!isVirtualMode && geofencedStepIndex !== null && userLocation) {
+      // If user is geofenced and location is known (not in virtual mode), user-following effect will take over.
+      return;
+    }
+
     if (mapRef.current && steps[currentStep]) {
       const map = mapRef.current;
       const centerCoord = steps[currentStep].coordinate;
@@ -488,7 +514,14 @@ const MapWithTour = () => {
         essential: true,
       });
     }
-  }, [currentStep, steps, legs]); // Added legs to dependencies if card height depends on its content via legs
+  }, [
+    currentStep,
+    steps,
+    legs,
+    geofencedStepIndex,
+    userLocation,
+    isVirtualMode,
+  ]); // MODIFIED: Added isVirtualMode
 
   const handlePrev = () => {
     if (currentStep > 0) {
@@ -513,27 +546,42 @@ const MapWithTour = () => {
   const handleRecenter = () => {
     if (mapRef.current) {
       const map = mapRef.current;
-      map.stop(); // Add this to stop any ongoing animation
+      map.stop();
 
       let centerCoord;
-      let targetNameForLog = "Unknown"; // For logging
+      let targetNameForLog = "Unknown";
 
-      if (geofencedStepIndex !== null && steps[geofencedStepIndex]) {
-        centerCoord = steps[geofencedStepIndex].coordinate;
-        targetNameForLog = `Geofenced Spot: ${steps[geofencedStepIndex].name}`;
-      } else if (userLocation) {
-        // Not geofenced, but user location is available
-        centerCoord = userLocation;
-        targetNameForLog = "User\\'s Current Location";
-      } else if (steps[currentStep]) {
-        // Fallback to current step if no geofence and no user location
-        centerCoord = steps[currentStep].coordinate;
-        targetNameForLog = `Current Tour Step: ${steps[currentStep].name}`;
+      if (isVirtualMode) {
+        if (steps[currentStep]) {
+          centerCoord = steps[currentStep].coordinate;
+          targetNameForLog = `Virtual Tour - Current Step: ${steps[currentStep].name}`;
+        } else {
+          console.warn(
+            "handleRecenter (Virtual Mode): No current step defined."
+          );
+          return;
+        }
       } else {
-        console.warn(
-          "handleRecenter: No target coordinate could be determined."
-        );
-        return;
+        // Normal mode logic
+        if (userLocation) {
+          centerCoord = userLocation;
+          targetNameForLog = "User's Current Location";
+          if (geofencedStepIndex !== null && steps[geofencedStepIndex]) {
+            targetNameForLog += ` (near ${steps[geofencedStepIndex].name})`;
+          }
+        } else if (geofencedStepIndex !== null && steps[geofencedStepIndex]) {
+          centerCoord = steps[geofencedStepIndex].coordinate;
+          targetNameForLog = `Geofenced Spot: ${steps[geofencedStepIndex].name}`;
+        } else if (steps[currentStep]) {
+          centerCoord = steps[currentStep].coordinate;
+          // Corrected: Ensure targetNameForLog is assigned here as well
+          targetNameForLog = `Current Tour Step: ${steps[currentStep].name}`;
+        } else {
+          console.warn(
+            "handleRecenter: No target coordinate could be determined."
+          );
+          return;
+        }
       }
 
       if (
@@ -548,6 +596,7 @@ const MapWithTour = () => {
         return;
       }
 
+      // Ensure targetNameForLog is used or remove if not needed for final deployment
       console.log(`handleRecenter: Targeting ${targetNameForLog}`, centerCoord);
 
       const original = map.project(centerCoord);
@@ -560,8 +609,6 @@ const MapWithTour = () => {
       }
 
       const isMobile = window.innerWidth <= 640;
-      console.log(`handleRecenter: isMobile = ${isMobile}`);
-
       let cardHeight = 0;
       const stepCardElement = document.querySelector(".fixed.bottom-0");
       if (stepCardElement) {
@@ -571,19 +618,11 @@ const MapWithTour = () => {
       }
 
       const offsetY = isMobile ? cardHeight / 2 : 0;
-      console.log(
-        `handleRecenter: Calculated offsetY = ${offsetY} (cardHeight: ${cardHeight})`
-      );
-
       const newCenter = map.unproject([original.x, original.y - offsetY]);
-      console.log(
-        `handleRecenter: New calculated center for map.flyTo:`,
-        newCenter
-      );
 
       map.flyTo({
         center: newCenter,
-        zoom: userLocation && !geofencedStepIndex ? 18.5 : 17.5, // Zoom in a bit more if centering on user
+        zoom: isVirtualMode || !userLocation ? 17.5 : 18.5, // Adjust zoom for virtual mode
         pitch: 45,
         bearing: 60,
         speed: 0.9,
@@ -593,10 +632,84 @@ const MapWithTour = () => {
     }
   };
 
+  // Handle Virtual Tour Toggle
+  const toggleVirtualMode = () => {
+    setIsVirtualMode((prev) => {
+      const newMode = !prev;
+      if (newMode) {
+        // Entering virtual mode
+        setCurrentStep(0);
+        setGeofencedStepIndex(null);
+        setShowGeofenceNotification(false);
+        setShowGeofenceFallback(false);
+        setUserLocation(null); // Clear real user location for virtual tour
+        setIsLoading(false); // Ensure loader is off for virtual tour
+        if (mapRef.current && steps.length > 0) {
+          // Fly to first step in virtual mode
+          const map = mapRef.current;
+          const centerCoord = steps[0].coordinate;
+          const original = map.project(centerCoord);
+          if (original) {
+            const isMobile = window.innerWidth <= 640;
+            let cardHeight = 0;
+            const stepCardElement = document.querySelector(".fixed.bottom-0");
+            if (stepCardElement) cardHeight = stepCardElement.offsetHeight;
+            else cardHeight = isMobile ? 200 : 140;
+            const offsetY = isMobile ? cardHeight / 2 : 0;
+            const newCenter = map.unproject([original.x, original.y - offsetY]);
+            map.flyTo({
+              center: newCenter,
+              zoom: 17.5,
+              pitch: 45,
+              bearing: 60,
+            });
+          }
+        }
+      } else {
+        // Exiting virtual mode
+        // Real location watch will restart due to useEffect dependency on isVirtualMode
+        // isLoading will be set to true by the location useEffect
+      }
+      return newMode;
+    });
+  };
+
   return (
     <div className="relative w-full h-screen">
+      {isLoading && (
+        <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[5000] pointer-events-auto">
+          <svg
+            className="animate-spin h-12 w-12 text-blue-600 mb-4"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          <p className="text-xl font-semibold text-gray-700">
+            Loading Tour Experience...
+          </p>
+          <p className="text-sm text-gray-500">
+            Please wait while we prepare the map and location services.
+          </p>
+        </div>
+      )}
+
       {/* Geofence Notification */}
-      {geofencedStepIndex !== null &&
+      {!isVirtualMode &&
+        geofencedStepIndex !== null &&
         showGeofenceNotification &&
         steps[geofencedStepIndex] && (
           <div className="fixed top-4 left-0 right-0 z-[1050] flex justify-center pointer-events-none font-dm-sans tracking-tight">
@@ -624,18 +737,25 @@ const MapWithTour = () => {
         )}
 
       {/* Geofence Fallback Notification */}
-      {showGeofenceFallback && (
+      {!isVirtualMode && showGeofenceFallback && (
         <div className="fixed top-4 left-0 right-0 z-[1050] flex justify-center pointer-events-none font-dm-sans tracking-tight">
           <motion.div
-            initial={{ y: -60, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
-            className="relative backdrop-blur-md bg-yellow-500/90 text-black rounded-full w-full mx-4 max-w-xs sm:max-w-sm md:max-w-md py-3 px-6 pointer-events-auto flex items-center justify-center shadow-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+            className="relative backdrop-blur-md bg-red-600/90 rounded-full w-full mx-4 max-w-xs sm:max-w-sm md:max-w-md py-3 px-10 pointer-events-auto flex items-center justify-center shadow-xl"
           >
-            <p className="text-sm text-center font-medium">
-              You are not currently near any tour spots. Move closer to a spot
-              to get started.
+            <p className="text-white text-sm text-center">
+              You are outside the tour area. Please return to the highlighted
+              area.
             </p>
+            <button
+              onClick={() => setShowGeofenceFallback(false)}
+              className="absolute top-1/2 right-3 transform -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs leading-none focus:outline-none focus:ring-2 focus:ring-white/50"
+              aria-label="Close notification"
+            >
+              &#x2715; {/* Close icon (X) */}
+            </button>
           </motion.div>
         </div>
       )}
@@ -665,6 +785,13 @@ const MapWithTour = () => {
         legs={legs}
         directions={directions}
       />
+      <button
+        onClick={toggleVirtualMode} // MODIFIED: Use new handler
+        className="fixed bottom-[calc(var(--step-card-height,140px)+1rem)] sm:bottom-28 right-4 z-[1000] bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-full shadow-lg transition-colors duration-150 text-sm"
+        style={{ "--step-card-height": "140px" }} // Default, can be updated if card height is dynamic
+      >
+        {isVirtualMode ? "Exit Virtual Tour" : "Try Virtual Tour"}
+      </button>
     </div>
   );
 };
