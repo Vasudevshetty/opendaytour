@@ -162,15 +162,11 @@ const MapWithTour = () => {
                 justify-content: center;
                 width: ${isActive ? "2.1em" : "1.7em"};
                 height: ${isActive ? "2.1em" : "1.7em"};
-                background: ${
-                  isActive ? markerColors.active : markerColors.inactive
-                };
                 color: #fff;
                 font-weight: 700;
-                font-size: 1.1em;
-                border-radius: 50%;
+                font-size: 1rem;
+                border-radius: 20%;
                 box-shadow: 0 2px 8px 0 rgba(0,0,0,0.18);
-                border: 2px solid #fff;
                 transform: scale(${isActive ? "1.13" : "1"});
                 transition: all 0.18s cubic-bezier(.4,0,.2,1);
               ">${idx + 1}</span>
@@ -272,17 +268,16 @@ const MapWithTour = () => {
           ".mapboxgl-popup-content"
         );
         popupContent.forEach((el) => {
-          el.style.background = "rgba(17,24,39,0.95)";
+          el.style.background = "rgba(17, 24, 39, 0.9)"; // slightly more transparent
           el.style.color = "#fff";
           el.style.borderRadius = "1rem";
-          el.style.boxShadow = "0 4px 24px 0 rgba(0,0,0,0.25)";
-          el.style.padding = "0.5rem 1.2rem";
+          el.style.boxShadow = "0 3px 18px rgba(0, 0, 0, 0.2)";
+          el.style.padding = "0.4rem 0.9rem"; // slimmer padding
           el.style.fontFamily = "'DM Sans', sans-serif";
-          el.style.fontSize = "0.95rem";
+          el.style.fontSize = "0.85rem"; // smaller font size
           el.style.fontWeight = "500";
-          el.style.minWidth = "90px";
+          el.style.minWidth = "80px";
           el.style.textAlign = "center";
-          el.style.border = "none";
         });
       }, 0);
     }
@@ -375,9 +370,9 @@ const MapWithTour = () => {
     if (mapRef.current && steps[currentStep]) {
       mapRef.current.jumpTo({
         center: steps[currentStep].coordinate,
-        zoom: 19.5,
-        pitch: 75,
-        bearing: 20,
+        zoom: 17.5,
+        pitch: 25,
+        bearing: -90,
         essential: true,
       });
     }
@@ -415,7 +410,7 @@ const MapWithTour = () => {
         className="w-full h-screen fixed top-0 left-0 z-10"
         style={{ minHeight: "60vh" }}
       />
-      <div className="fixed top-2 left-0 right-0 z-20 flex justify-center pointer-events-none font-dm-sans tracking-tight">
+      {/* <div className="fixed top-2 left-0 right-0 z-20 flex justify-center pointer-events-none font-dm-sans tracking-tight">
         <motion.div
           initial={{ y: -40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -449,7 +444,7 @@ const MapWithTour = () => {
             )}
           </div>
         </motion.div>
-      </div>
+      </div> */}
       {/* Confetti CSS */}
       <style>{`
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }

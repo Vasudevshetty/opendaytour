@@ -218,7 +218,7 @@ const StepCard = ({
                   d="M15 19l-7-7 7-7"
                 />
               </svg>
-              Previous
+              Prev
             </button>
             <button
               className="flex-1 min-w-[80px] bg-cyan-700 hover:bg-cyan-900 text-white px-2 py-2 rounded-full shadow font-bold transition-all duration-200 mx-1 flex items-center justify-center"
