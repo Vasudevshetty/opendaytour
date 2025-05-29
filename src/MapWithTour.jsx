@@ -12,7 +12,7 @@ const markerColors = {
   user: "#EF4444",
 };
 
-function createMarkerElement(isActive, number) {
+function createMarkerElement(isActive) {
   const el = document.createElement("div");
   el.className = "custom-marker";
   el.style.width = isActive ? "32px" : "26px";
@@ -221,7 +221,7 @@ const MapWithTour = ({
         .addTo(mapRef.current);
 
       // Add always-on popup for user location
-      const userPopup = new mapboxgl.Popup({
+      new mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false,
         offset: 30,
