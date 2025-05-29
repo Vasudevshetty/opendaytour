@@ -365,18 +365,42 @@ const MapWithTour = () => {
     if (mapRef.current && steps.length > 1) fetchRoute();
   }, [steps]);
 
-  // When currentStep changes, always center the map on the step's coordinate (ignore substeps)
+  // When currentStep changes, always center the map on the step's coordinate
   useEffect(() => {
     if (mapRef.current && steps[currentStep]) {
-      mapRef.current.jumpTo({
-        center: steps[currentStep].coordinate,
+      const map = mapRef.current;
+      const centerCoord = steps[currentStep].coordinate;
+
+      // Calculate offset to center the marker, considering the StepCard
+      const original = map.project(centerCoord);
+      const isMobile = window.innerWidth <= 640;
+      // Attempt to query the StepCard element.
+      // Note: This might be fragile if the card's selector/class changes.
+      // It's assumed the StepCard is rendered and has a consistent height or can be queried.
+      let cardHeight = 0;
+      const stepCardElement = document.querySelector(".fixed.bottom-0"); // A common selector for a bottom card
+      if (stepCardElement) {
+        cardHeight = stepCardElement.offsetHeight;
+      } else {
+        // Fallback or default height if the card isn't found or for non-mobile
+        // This value might need adjustment based on your StepCard's actual height
+        cardHeight = isMobile ? 200 : 140; // Example fallback heights
+      }
+
+      const offsetY = isMobile ? cardHeight / 2 : 0; // Only apply vertical offset on mobile
+      const newCenter = map.unproject([original.x, original.y - offsetY]);
+
+      map.flyTo({
+        center: newCenter, // Use the adjusted center
         zoom: 17.5,
-        pitch: 25,
-        bearing: -90,
+        pitch: 45, // Adjusted from previous 0 to match user's preference
+        bearing: 60,
+        speed: 0.7,
+        curve: 1.42,
         essential: true,
       });
     }
-  }, [currentStep, steps]);
+  }, [currentStep, steps, legs]); // Added legs to dependencies if card height depends on its content via legs
 
   const handlePrev = () => {
     if (currentStep > 0) {
