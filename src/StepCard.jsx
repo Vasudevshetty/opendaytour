@@ -10,6 +10,7 @@ const StepCard = ({
   steps,
   currentStepIndex,
   onRecenter,
+  onResetTour,
 }) => {
   // Use currentStepIndex for dynamic step number
   const hopNumber =
@@ -195,11 +196,12 @@ const StepCard = ({
               </div>
             )}
           </motion.div>
-          <div className="flex gap-3 w-full justify-between mt-auto pt-1">
+          <div className="flex gap-1 w-full justify-between mt-auto pt-1 flex-wrap sm:flex-nowrap">
             <button
-              className="flex items-center cursor-pointer gap-2 bg-gray-800 text-gray-200 px-5 py-2 rounded-full shadow hover:bg-gray-700 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
+              className="flex-1 min-w-[80px] flex items-center justify-center cursor-pointer gap-2 bg-gray-800 text-gray-200 px-2 py-2 rounded-full shadow hover:bg-gray-700 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
               onClick={onPrev}
               disabled={isFirst}
+              style={{ marginRight: 4 }}
             >
               <svg
                 width="20"
@@ -219,9 +221,17 @@ const StepCard = ({
               Previous
             </button>
             <button
-              className="flex items-center gap-2 cursor-pointer bg-green-500 text-white px-5 py-2 rounded-full shadow hover:bg-green-600 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
+              className="flex-1 min-w-[80px] bg-cyan-700 hover:bg-cyan-900 text-white px-2 py-2 rounded-full shadow font-bold transition-all duration-200 mx-1 flex items-center justify-center"
+              onClick={onResetTour}
+              style={{ marginLeft: 4, marginRight: 4 }}
+            >
+              Reset 
+            </button>
+            <button
+              className="flex-1 min-w-[80px] flex items-center justify-center gap-2 cursor-pointer bg-green-500 text-white px-2 py-2 rounded-full shadow hover:bg-green-600 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
               onClick={onNext}
               disabled={isLast}
+              style={{ marginLeft: 4 }}
             >
               Next
               <svg

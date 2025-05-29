@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 function App() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [subStep, setSubStep] = useState(0);
   const [userLocation, setUserLocation] = useState(null);
   const [recenterKey, setRecenterKey] = useState(0); // for triggering recenter
   const [showWelcome, setShowWelcome] = useState(true);
@@ -35,6 +36,12 @@ function App() {
 
   // Handler for recentering map
   const handleRecenter = () => setRecenterKey((k) => k + 1);
+
+  // Handler to reset the tour (to be passed to StepCard)
+  const handleResetTour = () => {
+    setCurrentStep(0);
+    setSubStep(0);
+  };
 
   return (
     <div className="relative w-full h-screen bg-gray-100">
@@ -101,6 +108,9 @@ function App() {
         steps={tourSteps}
         currentStepIndex={currentStep}
         onRecenter={handleRecenter}
+        subStep={subStep}
+        setSubStep={setSubStep}
+        onResetTour={handleResetTour}
       />
     </div>
   );

@@ -105,13 +105,6 @@ const MapWithTour = ({
   // Add confetti effect for final step
   const [showConfetti, setShowConfetti] = useState(false);
 
-  // Helper to reset tour
-  const handleReset = () => {
-    setCurrentStep(0);
-    setSubStep(0);
-    setShowConfetti(false);
-  };
-
   // Detect if at final step
   const isFinalStep = currentStep === steps.length - 1;
 
@@ -307,7 +300,7 @@ const MapWithTour = ({
       })
         .setLngLat(userLocation)
         .setHTML(
-          `<div><span class="tour-popup-title text-red-500">You are here</span></div>`
+          `<div style="background:rgba(17,24,39,0.95);color:#ef4444;border-radius:1rem;padding:0.5rem 1.2rem;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:700;min-width:90px;text-align:center;border:none;box-shadow:none;">You are here</div>`
         )
         .addTo(mapRef.current);
       // Directly style the user popup content
@@ -433,6 +426,19 @@ const MapWithTour = ({
     }
   };
 
+  // Center the map on the active marker (step) when currentStep changes
+  useEffect(() => {
+    if (mapRef.current && steps[currentStep]) {
+      mapRef.current.jumpTo({
+        center: steps[currentStep].coordinate,
+        zoom: 19.5,
+        pitch: 75,
+        bearing: 20,
+        essential: true,
+      });
+    }
+  }, [currentStep, steps]);
+
   return (
     <div className="relative w-full h-screen">
       {/* Confetti effect for final step */}
@@ -468,18 +474,11 @@ const MapWithTour = ({
                 </span>
                 <span className="text-lg">🎊</span>
               </div>
+              {/* Reset button removed from here; now handled in StepCard */}
             </div>
           </motion.div>
         </div>
       )}
-      {/* Reset button */}
-      <button
-        className="fixed top-4 right-4 z-30 bg-cyan-700 hover:bg-cyan-900 text-white px-4 py-2 rounded-full shadow font-bold transition-all duration-200"
-        onClick={handleReset}
-        style={{ pointerEvents: "auto" }}
-      >
-        Reset Tour
-      </button>
       <div
         ref={mapContainer}
         className="w-full h-screen fixed top-0 left-0 z-10"
