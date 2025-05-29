@@ -12,6 +12,8 @@ const StepCard = ({
   onRecenter,
   onResetTour,
   isFinalStep,
+  toggleVirtualMode,
+  isVirtualMode, // <-- add this prop
 }) => {
   const hopNumber =
     typeof currentStepIndex === "number" ? currentStepIndex + 1 : 1;
@@ -61,7 +63,7 @@ const StepCard = ({
           </div>
         </motion.button>
       )}
-      {/* Expanded Card */}
+
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -71,6 +73,14 @@ const StepCard = ({
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             className="fixed bottom-2 left-1/2 right-auto z-30 pointer-events-none font-dm-sans tracking-tight transform -translate-x-1/2 w-[95vw] max-w-md"
           >
+            <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(100%+16px)] z-40 flex justify-center w-full pointer-events-none">
+              <button
+                className="pointer-events-auto  px-4 py-2 rounded-full bg-cyan-700 hover:bg-cyan-800 text-white font-semibold shadow-lg transition-all duration-200 text-sm"
+                onClick={toggleVirtualMode}
+              >
+                {isVirtualMode ? "Exit Virtual Mode" : "Enter Virtual Mode"}
+              </button>
+            </div>
             <div
               className=" bg-[#0e0e0e]  rounded-4xl w-full pointer-events-auto flex flex-col relative overflow-hidden"
               style={{

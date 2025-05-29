@@ -1,7 +1,7 @@
-import { useRef, useEffect, useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { motion } from "framer-motion";
 import { tourSteps } from "./data/tour";
 import StepCard from "./StepCard";
 import Confetti from "./Confetti";
@@ -79,6 +79,7 @@ const MapWithTour = () => {
   const [showGeofenceFallback, setShowGeofenceFallback] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // Added for loader
   const [isVirtualMode, setIsVirtualMode] = useState(false); // Added for virtual tour
+  const [virtualModeNotification, setVirtualModeNotification] = useState(null);
 
   const watchIdRef = useRef(null);
   const mapContainer = useRef(null);
@@ -508,9 +509,9 @@ const MapWithTour = () => {
         center: newCenter, // Use the adjusted center
         zoom: 17.5,
         pitch: 45, // Adjusted from previous 0 to match user's preference
-        bearing: 60,
+        bearing: 270,
         speed: 0.7,
-        curve: 1.42,
+        curve: 2,
         essential: true,
       });
     }
@@ -624,7 +625,7 @@ const MapWithTour = () => {
         center: newCenter,
         zoom: isVirtualMode || !userLocation ? 17.5 : 18.5, // Adjust zoom for virtual mode
         pitch: 45,
-        bearing: 60,
+        bearing: 270,
         speed: 0.9,
         curve: 1.42,
         essential: true,
@@ -636,6 +637,10 @@ const MapWithTour = () => {
   const toggleVirtualMode = () => {
     setIsVirtualMode((prev) => {
       const newMode = !prev;
+      setVirtualModeNotification(
+        newMode ? "Entered Virtual Mode" : "Exited Virtual Mode"
+      );
+      setTimeout(() => setVirtualModeNotification(null), 2500);
       if (newMode) {
         // Entering virtual mode
         setCurrentStep(0);
@@ -661,7 +666,7 @@ const MapWithTour = () => {
               center: newCenter,
               zoom: 17.5,
               pitch: 45,
-              bearing: 60,
+              bearing: 90,
             });
           }
         }
@@ -676,6 +681,20 @@ const MapWithTour = () => {
 
   return (
     <div className="relative w-full h-screen">
+      {virtualModeNotification && (
+        <div className="fixed top-4 left-0 right-0 z-[1100] flex justify-center pointer-events-none font-dm-sans tracking-tight">
+          <motion.div
+            initial={{ y: -40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -40, opacity: 0 }}
+            transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+            className="backdrop-blur-md bg-cyan-600 rounded-full px-8 py-3 shadow-xl text-white text-base font-semibold pointer-events-auto"
+          >
+            📍{virtualModeNotification}
+          </motion.div>
+        </div>
+      )}
+
       {isLoading && (
         <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[5000] pointer-events-auto">
           <svg
@@ -785,6 +804,7 @@ const MapWithTour = () => {
         legs={legs}
         directions={directions}
         toggleVirtualMode={toggleVirtualMode}
+        isVirtualMode={isVirtualMode}
       />
     </div>
   );
