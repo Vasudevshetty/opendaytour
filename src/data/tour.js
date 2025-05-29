@@ -23,7 +23,7 @@ export const tourSteps = [
     coordinate: [76.613826, 12.312986],
   },
   {
-    name: "Admission Queries",
+    name: "Admission Desk",
     description: "Get your admission queries answered here.",
     shortDescription:
       "Admission query desk. Staff available for all your admission and document queries. Assistance for new students provided here.",

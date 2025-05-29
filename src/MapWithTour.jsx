@@ -5,6 +5,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { tourSteps } from "./data/tour";
 import StepCard from "./StepCard";
 import Confetti from "./Confetti";
+import { FiMapPin, FiX, FiAlertTriangle } from "react-icons/fi";
 
 mapboxgl.accessToken =
   "pk.eyJ1IjoibmlzY2hheWhyMTEiLCJhIjoiY20yeHB2dGwzMDZsMDJrcjRweHA3NnQwdyJ9.zJ4eHE9IMQ6RowiONFur0A";
@@ -58,7 +59,9 @@ function createMarkerElement(isActive) {
             stroke-width="2"
           />
           <circle cx="12" cy="12" r="4.5" fill="#ffffff"/>
-          <circle cx="12" cy="12" r="3" fill="${isActive ? markerColors.active : markerColors.inactive}"/>
+          <circle cx="12" cy="12" r="3" fill="${
+            isActive ? markerColors.active : markerColors.inactive
+          }"/>
         </g>
         <defs>
           <filter id="pin-shadow" x="-4" y="-2" width="32" height="44" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
@@ -312,7 +315,7 @@ const MapWithTour = () => {
         popupRef.current
           .setLngLat(step.coordinate)
           .setHTML(
-        `<div id="popup-content-${idx}" style="display: flex; align-items: center; gap: 0.25rem;">
+            `<div id="popup-content-${idx}" style="display: flex; align-items: center; gap: 0.25rem;">
           <span style="
             display: inline-flex;
             align-items: center;
@@ -341,42 +344,42 @@ const MapWithTour = () => {
           )
           .setOffset([0, isActive ? -45 : -35]) // Increased offset for active markers
           .addTo(mapRef.current);
-        
+
         setTimeout(() => {
           document.querySelectorAll(".mapboxgl-popup").forEach((popup) => {
-        popup.style.zIndex = isActive ? "1002" : "1001";
+            popup.style.zIndex = isActive ? "1002" : "1001";
           });
-          
+
           document.querySelectorAll(".mapboxgl-popup-content").forEach((el) => {
-        el.style.background = "#0e0e0e";
-        el.style.color = "#fff";
-        el.style.borderRadius = "0.75rem";
-        el.style.boxShadow = "0 4px 16px rgba(0,0,0,0.2)";
-        el.style.padding = isActive ? "0.5rem 1rem" : "0.4rem 0.75rem";
-        el.style.fontFamily = "'DM Sans', sans-serif";
-        el.style.fontSize = "0.875rem";
-        el.style.fontWeight = "500";
-        el.style.minWidth = "90px";
-        el.style.textAlign = "center";
-        el.style.border = "1px solid #444444";
-        el.style.display = "inline-block";
-        
-        if (isActive) {
-          el.style.overflow = "visible";
-          el.style.position = "relative";
-          el.style.zIndex = "1002";
-          el.style.animation = "popupScaleIn 0.3s cubic-bezier(.4,0,.2,1)";
-        }
+            el.style.background = "#0e0e0e";
+            el.style.color = "#fff";
+            el.style.borderRadius = "0.75rem";
+            el.style.boxShadow = "0 4px 16px rgba(0,0,0,0.2)";
+            el.style.padding = isActive ? "0.5rem 1rem" : "0.4rem 0.75rem";
+            el.style.fontFamily = "'DM Sans', sans-serif";
+            el.style.fontSize = "0.875rem";
+            el.style.fontWeight = "500";
+            el.style.minWidth = "90px";
+            el.style.textAlign = "center";
+            el.style.border = "1px solid #444444";
+            el.style.display = "inline-block";
+
+            if (isActive) {
+              el.style.overflow = "visible";
+              el.style.position = "relative";
+              el.style.zIndex = "1002";
+              el.style.animation = "popupScaleIn 0.3s cubic-bezier(.4,0,.2,1)";
+            }
           });
 
           if (!document.getElementById("popup-scale-keyframes")) {
-        const style = document.createElement("style");
-        style.id = "popup-scale-keyframes";
-        style.innerHTML = `@keyframes popupScaleIn { 
+            const style = document.createElement("style");
+            style.id = "popup-scale-keyframes";
+            style.innerHTML = `@keyframes popupScaleIn { 
           0% { transform: scale(0.8); opacity: 0; } 
           100% { transform: scale(1); opacity: 1; }
         }`;
-        document.head.appendChild(style);
+            document.head.appendChild(style);
           }
         }, 0);
       };
@@ -722,7 +725,7 @@ const MapWithTour = () => {
       setVirtualModeNotification(
         newMode ? "Entered Virtual Mode" : "Exited Virtual Mode"
       );
-      setTimeout(() => setVirtualModeNotification(null), 2500);
+      if (prev) setTimeout(() => setVirtualModeNotification(null), 1500);
       if (newMode) {
         setCurrentStep(0);
         setGeofencedStepIndex(null);
@@ -789,46 +792,48 @@ const MapWithTour = () => {
   }, [isLoading]);
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-screen font-dm-sans">
+      {/* Virtual Mode Notification */}
       {virtualModeNotification && (
-        <div className="fixed top-4 left-0 right-0 z-[1100] flex justify-center pointer-events-none font-dm-sans tracking-tight">
+        <div className="fixed top-4 left-0 right-0 z-[1100] flex justify-center pointer-events-none">
           <motion.div
             initial={{ y: -40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -40, opacity: 0 }}
             transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className="backdrop-blur-md bg-cyan-600 rounded-full px-8 py-3 shadow-xl text-white text-base font-semibold pointer-events-auto"
+            className="backdrop-blur-md bg-[#0e0e0e] border border-[#444444] rounded-full px-8 py-3 shadow-2xl text-cyan-400 text-sm font-semibold pointer-events-auto"
           >
-            📍{virtualModeNotification}
+            <span className="flex items-center gap-2">
+              <FiMapPin className="text-cyan-400" size={16} />
+              {virtualModeNotification}
+            </span>
           </motion.div>
         </div>
       )}
 
+      {/* Loading Screen */}
       {isLoading && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.4 }}
-          className="fixed inset-0 bg-black flex flex-col items-center justify-center z-[5000] pointer-events-auto"
+          className="fixed inset-0 bg-[#0e0e0e] flex flex-col items-center justify-center z-[5000] pointer-events-auto"
         >
-          {/* Map Pin with Pulse and Float */}
+          {/* Enhanced Map Pin Animation */}
           <motion.div
             animate={{ y: [0, -10, 0] }}
             transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
             className="relative mb-8"
           >
-            {/* Pulse Circle */}
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: [1, 1.6], opacity: [0.3, 0] }}
               transition={{ repeat: Infinity, duration: 1.6, ease: "easeOut" }}
-              className="absolute inset-0 rounded-full bg-cyan-400 opacity-50 z-0"
+              className="absolute inset-0 rounded-full bg-cyan-400/20 opacity-50"
             />
-
-            {/* Map Pin SVG */}
             <svg
-              className="relative z-10 h-20 w-20 text-cyan-600 drop-shadow-xl"
+              className="relative z-10 h-20 w-20 text-cyan-400 drop-shadow-2xl"
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
               fill="currentColor"
@@ -837,102 +842,108 @@ const MapWithTour = () => {
             </svg>
           </motion.div>
 
-          {/* Progress Bar */}
-          <div className="w-64 max-w-xs h-3 bg-gray-800 rounded-full overflow-hidden mb-6">
+          {/* Enhanced Progress Bar */}
+          <div className="w-64 max-w-xs h-2 bg-[#1c1c1c] rounded-full overflow-hidden mb-6 border border-[#444444]">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: progress + "%" }}
               transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-              className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full shadow-inner"
+              className="h-full bg-gradient-to-r from-cyan-500 to-cyan-400 rounded-full shadow-lg"
               style={{ minWidth: 8 }}
             />
           </div>
 
-          {/* Title */}
           <motion.h2
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.6 }}
-            className="text-3xl font-extrabold text-white tracking-tight mb-2"
+            className="text-2xl font-bold text-cyan-400 tracking-tight mb-2"
           >
-            Navigating Your Tour
+            Preparing Your Journey
           </motion.h2>
 
-          {/* Subtext */}
           <motion.p
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5, duration: 0.6 }}
-            className="text-md text-gray-200 text-center max-w-md px-6"
+            className="text-sm text-gray-400 text-center max-w-md px-6"
           >
-            Initializing your immersive map experience. Please hold tight while
-            we load location services and terrain data.
+            Setting up your immersive experience. Please wait while we calibrate
+            the navigation system.
           </motion.p>
         </motion.div>
       )}
-      {/* Geofence Notification */}
+
+      {/* Geofence Notifications */}
       {!isVirtualMode &&
         geofencedStepIndex !== null &&
         showGeofenceNotification &&
         steps[geofencedStepIndex] && (
-          <div className="fixed top-4 left-0 right-0 z-[1050] flex justify-center pointer-events-none font-dm-sans tracking-tight">
+          <div className="fixed top-4 left-0 right-0 z-[1050] flex justify-center pointer-events-none">
             <motion.div
               initial={{ y: -60, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
-              className="relative backdrop-blur-md bg-black/80 rounded-full w-full mx-4 max-w-xs sm:max-w-sm md:max-w-md py-3 px-10 pointer-events-auto flex items-center justify-center shadow-xl"
+              className="relative backdrop-blur-md bg-[#0e0e0e] border border-[#444444] rounded-2xl w-full mx-4 max-w-md py-3 px-6 pointer-events-auto flex items-center justify-between shadow-2xl"
             >
-              <p className="text-cyan-300 text-sm text-center">
-                You are near:{" "}
-                <span className="font-semibold text-white">
-                  {steps[geofencedStepIndex].name}
-                </span>
-              </p>
+              <div className="flex items-center gap-3">
+                <div className="bg-cyan-400/20 p-2 rounded-full">
+                  <FiMapPin className="text-cyan-400" size={18} />
+                </div>
+                <p className="text-gray-300 text-sm">
+                  You&apos;re near{" "}
+                  <span className="font-semibold text-cyan-400">
+                    {steps[geofencedStepIndex].name}
+                  </span>
+                </p>
+              </div>
               <button
                 onClick={() => setShowGeofenceNotification(false)}
-                className="absolute top-1/2 right-3 transform -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs leading-none focus:outline-none focus:ring-2 focus:ring-white/50"
+                className="ml-4 hover:bg-[#1c1c1c] text-gray-400 rounded-full p-2 transition-colors duration-200"
                 aria-label="Close notification"
               >
-                &#x2715; {/* Close icon (X) */}
+                <FiX size={16} />
               </button>
             </motion.div>
           </div>
         )}
-      {/* Geofence Fallback Notification */}
+
+      {/* Geofence Fallback */}
       {!isVirtualMode && showGeofenceFallback && (
-        <div className="fixed top-4 left-0 right-0 z-[1050] flex justify-center pointer-events-none font-dm-sans tracking-tight">
+        <div className="fixed top-4 left-0 right-0 z-[1050] flex justify-center pointer-events-none">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-            className="relative backdrop-blur-md bg-red-600/90 rounded-full w-full mx-4 max-w-xs sm:max-w-sm md:max-w-md py-3 px-10 pointer-events-auto flex items-center justify-center shadow-xl"
+            className="relative backdrop-blur-md bg-[#0e0e0e] border border-red-500/50 rounded-2xl w-full mx-4 max-w-md py-3 px-6 pointer-events-auto flex items-center justify-between shadow-2xl"
           >
-            <p className="text-white text-sm text-center">
-              You are outside the tour area. Please return to the highlighted
-              area.
-            </p>
+            <div className="flex items-center gap-3">
+              <div className="bg-red-500/20 p-2 rounded-full">
+                <FiAlertTriangle className="text-red-500" size={18} />
+              </div>
+              <p className="text-gray-300 text-sm">
+                You&apos;ve wandered outside the tour area
+              </p>
+            </div>
             <button
               onClick={() => setShowGeofenceFallback(false)}
-              className="absolute top-1/2 right-3 transform -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs leading-none focus:outline-none focus:ring-2 focus:ring-white/50"
+              className="ml-4 hover:bg-[#1c1c1c] text-gray-400 rounded-full p-2 transition-colors duration-200"
               aria-label="Close notification"
             >
-              &#x2715; {/* Close icon (X) */}
+              <FiX size={16} />
             </button>
           </motion.div>
         </div>
       )}
+
       {showConfetti && <Confetti onClose={() => setShowConfetti(false)} />}
+
       <div
         ref={mapContainer}
         className="w-full h-screen fixed top-0 left-0 z-10"
-        style={{
-          minHeight: "60vh",
-        }}
+        style={{ minHeight: "60vh" }}
       />
-      <style>{`
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        .animate-fade-in { animation: fade-in 0.7s; }
-      `}</style>
+
       <StepCard
         step={steps[currentStep]}
         onPrev={isVirtualMode ? handlePrev : null}
