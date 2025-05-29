@@ -11,8 +11,8 @@ const StepCard = ({
   currentStepIndex,
   onRecenter,
   onResetTour,
+  isFinalStep,
 }) => {
-  // Use currentStepIndex for dynamic step number
   const hopNumber =
     typeof currentStepIndex === "number" ? currentStepIndex + 1 : 1;
   const totalHops = Array.isArray(steps) ? steps.length : undefined;
@@ -200,7 +200,7 @@ const StepCard = ({
             <button
               className="flex-1 min-w-[80px] flex items-center justify-center cursor-pointer gap-2 bg-gray-800 text-gray-200 px-2 py-2 rounded-full shadow hover:bg-gray-700 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
               onClick={onPrev}
-              disabled={isFirst}
+              disabled={isFirst || isFinalStep}
               style={{ marginRight: 4 }}
             >
               <svg
@@ -225,12 +225,12 @@ const StepCard = ({
               onClick={onResetTour}
               style={{ marginLeft: 4, marginRight: 4 }}
             >
-              Reset 
+              Reset
             </button>
             <button
               className="flex-1 min-w-[80px] flex items-center justify-center gap-2 cursor-pointer bg-green-500 text-white px-2 py-2 rounded-full shadow hover:bg-green-600 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-base font-semibold"
               onClick={onNext}
-              disabled={isLast}
+              disabled={isLast || isFinalStep}
               style={{ marginLeft: 4 }}
             >
               Next

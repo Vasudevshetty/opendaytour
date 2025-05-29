@@ -2,6 +2,9 @@ import { useRef, useEffect, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { motion } from "framer-motion";
+import { tourSteps } from "./data/tourSteps";
+import StepCard from "./StepCard";
+import Confetti from "./Confetti";
 
 mapboxgl.accessToken =
   "pk.eyJ1IjoibmlzY2hheWhyMTEiLCJhIjoiY20yeHB2dGwzMDZsMDJrcjRweHA3NnQwdyJ9.zJ4eHE9IMQ6RowiONFur0A";
@@ -85,13 +88,11 @@ function getCurrentManeuverView(legs, steps, currentStep, subStep) {
   return { coord: steps[currentStep]?.coordinate, bearing: 20 };
 }
 
-const MapWithTour = ({
-  steps,
-  currentStep,
-  setCurrentStep,
-  userLocation,
-  recenterKey,
-}) => {
+const MapWithTour = () => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [userLocation, setUserLocation] = useState(null);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [resetKey, setResetKey] = useState(0); // force remount for reset
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -101,51 +102,30 @@ const MapWithTour = ({
   );
   const [directions, setDirections] = useState([]);
   const [legs, setLegs] = useState([]);
-  const [subStep, setSubStep] = useState(0);
-  // Add confetti effect for final step
-  const [showConfetti, setShowConfetti] = useState(false);
+  const steps = tourSteps;
 
-  // Detect if at final step
-  const isFinalStep = currentStep === steps.length - 1;
-
-  // Virtual tour movement: animate camera along the step geometry
+  // Get user location on mount
   useEffect(() => {
-    if (
-      mapRef.current &&
-      legs[currentStep] &&
-      legs[currentStep].steps &&
-      legs[currentStep].steps[subStep] &&
-      legs[currentStep].steps[subStep].geometry &&
-      legs[currentStep].steps[subStep].geometry.coordinates.length > 1
-    ) {
-      const coords = legs[currentStep].steps[subStep].geometry.coordinates;
-      let i = 0;
-      function animateCamera() {
-        if (i < coords.length) {
-          mapRef.current.easeTo({
-            center: coords[i],
-            zoom: 19.5,
-            pitch: 75,
-            bearing: mapRef.current.getBearing(),
-            duration: 120,
-            essential: true,
-          });
-          i++;
-          requestAnimationFrame(animateCamera);
-        }
-      }
-      animateCamera();
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setUserLocation([pos.coords.longitude, pos.coords.latitude]);
+        },
+        () => {},
+        { enableHighAccuracy: true }
+      );
     }
-  }, [currentStep, subStep, legs]);
+  }, []);
 
   // Show confetti on final step
   useEffect(() => {
-    if (isFinalStep) {
+    if (currentStep === tourSteps.length - 1) {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000);
     }
-  }, [isFinalStep]);
+  }, [currentStep]);
 
+  // Map and marker logic
   useEffect(() => {
     if (!mapRef.current) {
       mapRef.current = new mapboxgl.Map({
@@ -299,14 +279,7 @@ const MapWithTour = ({
       }, 0);
     }
 
-    // Responsive offset for mobile: always center marker above StepCard
-    const isMobile = window.innerWidth <= 640;
-    let cardHeight = 0;
-    if (isMobile) {
-      // Use only a valid selector for the StepCard
-      const card = document.querySelector(".backdrop-blur-md");
-      cardHeight = card ? card.offsetHeight : 140;
-    }
+    // Responsive offset for mobile
     let centerCoord = steps[currentStep].coordinate;
     if (
       legs.length &&
@@ -314,23 +287,21 @@ const MapWithTour = ({
       legs[currentStep].steps &&
       legs[currentStep].steps.length > 0
     ) {
-      const { coord } = getCurrentManeuverView(
-        legs,
-        steps,
-        currentStep,
-        subStep
-      );
-      centerCoord = coord;
+      // No substep logic, just use the step's coordinate
+      centerCoord = steps[currentStep].coordinate;
     }
     if (mapRef.current) {
       const map = mapRef.current;
       const original = map.project(centerCoord);
+      const isMobile = window.innerWidth <= 640;
+      const card = document.querySelector(".backdrop-blur-md");
+      const cardHeight = isMobile && card ? card.offsetHeight : 140;
       const offsetY = isMobile ? cardHeight / 2 : 0;
       const newCenter = map.unproject([original.x, original.y - offsetY]);
       map.jumpTo({
         center: newCenter,
         zoom: 19.5,
-        pitch: 60, // slightly less pitch for mobile
+        pitch: 60,
         bearing: 20,
         essential: true,
       });
@@ -343,7 +314,7 @@ const MapWithTour = ({
         userMarkerRef.current._userPopup.remove();
       }
     };
-  }, [steps, currentStep, userLocation, setCurrentStep, legs, subStep]);
+  }, [steps, currentStep, userLocation, legs]);
 
   useEffect(() => {
     async function fetchRoute() {
@@ -391,30 +362,7 @@ const MapWithTour = ({
     if (mapRef.current && steps.length > 1) fetchRoute();
   }, [steps]);
 
-  const directionStepIdx = getDirectionStepForSpot(legs, currentStep);
-  const legSteps = legs[currentStep]?.steps?.length || 0;
-
-  useEffect(() => {
-    setSubStep(0);
-  }, [currentStep]);
-
-  const handlePrev = () => {
-    if (subStep > 0) {
-      setSubStep(subStep - 1);
-    } else if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
-  };
-
-  const handleNext = () => {
-    if (subStep < legSteps - 1) {
-      setSubStep(subStep + 1);
-    } else if (currentStep < steps.length - 2) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  // Center the map on the active marker (step) when currentStep changes
+  // When currentStep changes, always center the map on the step's coordinate (ignore substeps)
   useEffect(() => {
     if (mapRef.current && steps[currentStep]) {
       mapRef.current.jumpTo({
@@ -427,46 +375,38 @@ const MapWithTour = ({
     }
   }, [currentStep, steps]);
 
+  const handlePrev = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handleResetTour = () => {
+    setCurrentStep(0);
+    setShowConfetti(false);
+    setResetKey((k) => k + 1); // force remount StepCard
+  };
+
+  const handleRecenter = () => {};
+
   return (
     <div className="relative w-full h-screen">
-      {/* Confetti effect for final step */}
       {showConfetti && (
-        <div className="fixed inset-0 z-50 flex justify-center items-center pointer-events-none backdrop-blur-sm font-dm-sans tracking-tight animate-fade-in">
-          <motion.div
-            initial={{ opacity: 0, filter: "blur(10px)" }}
-            animate={{ opacity: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, filter: "blur(10px)" }}
-            transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
-            className="pointer-events-auto px-10 py-6 rounded-3xl shadow-2xl border border-orange-200/30 bg-gradient-to-br from-white via-orange-50 to-blue-50 backdrop-blur-lg max-w-md w-full mx-6 flex flex-col items-center relative overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 via-transparent to-blue-500/10 rounded-3xl"></div>
-            <div className="relative z-10 flex flex-col items-center">
-              <div className="w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-orange-400 to-blue-600 flex items-center justify-center shadow-lg">
-                <span role="img" aria-label="confetti" style={{ fontSize: 40 }}>
-                  🎉
-                </span>
-              </div>
-              <h2 className="text-xl font-black mb-1 text-center text-black tracking-tight leading-tight">
-                Tour Complete!
-              </h2>
-              <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-orange-600 via-blue-700 to-orange-500 bg-clip-text text-transparent tracking-tight leading-tight">
-                Congratulations
-              </h2>
-              <p className="text-base text-gray-600 text-center py-4 font-medium leading-tight">
-                You have finished the campus tour. We hope you enjoyed the
-                journey!
-              </p>
-              <div className="flex items-center gap-2 px-4 py-2 my-2 rounded-full bg-gradient-to-r from-orange-100 to-blue-100 border border-orange-200">
-                <span className="text-sm text-gray-700 font-semibold">
-                  Thank you for visiting
-                </span>
-                <span className="text-lg">🎊</span>
-              </div>
-              {/* Reset button removed from here; now handled in StepCard */}
-            </div>
-          </motion.div>
-        </div>
+        <Confetti>
+          <div
+            ref={mapContainer}
+            className="w-full h-screen fixed top-0 left-0 z-0"
+            style={{ minHeight: "60vh" }}
+          />
+        </Confetti>
       )}
+      {/* Map always rendered for overlay effect */}
       <div
         ref={mapContainer}
         className="w-full h-screen fixed top-0 left-0 z-10"
@@ -478,50 +418,32 @@ const MapWithTour = ({
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
           className="backdrop-blur-md bg-black/90 rounded-full w-full mx-2 max-w-sm py-3 px-8 pointer-events-auto flex flex-col items-center"
-          style={{ minHeight: 60, maxHeight: 140 }}
+          style={{ minHeight: 60, maxHeight: 240 }}
         >
           <h3 className="text-[0.6rem] font-bold mb-1 text-center text-cyan-300 tracking-wide uppercase drop-shadow">
-            {isFinalStep ? "Final Step" : `Step ${subStep + 1} of ${legSteps}`}
+            {currentStep === steps.length - 1
+              ? "Final Step"
+              : `Directions for Step ${currentStep + 1}`}
           </h3>
-          <div className="flex items-center justify-between w-full gap-2">
-            <button
-              className="bg-gray-800 text-gray-200 px-2 py-1 rounded-full shadow hover:bg-gray-700 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold"
-              onClick={handlePrev}
-              disabled={currentStep === 0 && subStep === 0}
-              style={{ minWidth: 48 }}
-            >
-              Prev
-            </button>
-            <div className="flex-1 text-center text-white font-medium text-sm px-1 py-1 flex flex-col items-center min-h-[28px]">
-              <span style={{ wordBreak: "break-word", lineHeight: "1.4" }}>
-                {isFinalStep
-                  ? "Congratulations! You have completed the tour."
-                  : directions.length > 0
-                  ? directions[directionStepIdx + subStep]
-                  : "No directions available."}
-              </span>
-            </div>
-            <button
-              className="bg-cyan-600 text-white px-2 py-1 rounded-full shadow hover:bg-cyan-800 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-semibold"
-              onClick={handleNext}
-              disabled={
-                isFinalStep ||
-                (currentStep === steps.length - 2 && subStep === legSteps - 1)
-              }
-              style={{ minWidth: 48 }}
-            >
-              Next
-            </button>
-          </div>
-          <div className="flex gap-1 mt-2">
-            {Array.from({ length: legSteps }).map((_, idx) => (
-              <span
-                key={idx}
-                className={`w-1.5 h-1.5 rounded-full ${
-                  idx === subStep ? "bg-cyan-400" : "bg-gray-600"
-                } inline-block transition-all`}
-              />
-            ))}
+          <div className="w-full flex flex-col items-center">
+            {legs[currentStep]?.steps?.length > 0 ? (
+              <ul className="w-full text-cyan-200 text-sm space-y-1">
+                {legs[currentStep].steps.map((s, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="font-bold text-cyan-400">{idx + 1}.</span>
+                    <span>
+                      {directions && directions.length > 0
+                        ? directions[
+                            getDirectionStepForSpot(legs, currentStep) + idx
+                          ]
+                        : s.maneuver.instruction}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <span className="text-gray-400">No directions available.</span>
+            )}
           </div>
         </motion.div>
       </div>
@@ -530,6 +452,20 @@ const MapWithTour = ({
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         .animate-fade-in { animation: fade-in 0.7s; }
       `}</style>
+      <StepCard
+        key={resetKey}
+        step={steps[currentStep]}
+        onPrev={handlePrev}
+        onNext={handleNext}
+        isFirst={currentStep === 0}
+        isLast={currentStep === steps.length - 1}
+        steps={steps}
+        currentStepIndex={currentStep}
+        onRecenter={handleRecenter}
+        onResetTour={handleResetTour}
+        legs={legs}
+        directions={directions}
+      />
     </div>
   );
 };
