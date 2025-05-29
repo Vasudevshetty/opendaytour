@@ -81,7 +81,7 @@ const MapWithTour = () => {
   const mapRef = useRef(null);
   const markersRef = useRef([]);
   const userMarkerRef = useRef(null);
-  const userLocationPopupRef = useRef(null); // <-- Add new ref for user location popup
+  const userLocationPopupRef = useRef(null);
   const popupRef = useRef(
     new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
   );
@@ -89,12 +89,29 @@ const MapWithTour = () => {
   const [legs, setLegs] = useState([]);
   const steps = tourSteps;
 
+  // --- BEGIN MODIFICATION ---
+  // Ref to store the timestamp of the last user location state update
+  const lastLocationUpdateTimeRef = useRef(Date.now());
+  // Interval for throttling location updates (e.g., 3 seconds)
+  const locationUpdateInterval = 3000;
+  // --- END MODIFICATION ---
+
   // Get user location on mount (real-time)
   useEffect(() => {
     if (navigator.geolocation) {
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
-          setUserLocation([pos.coords.longitude, pos.coords.latitude]);
+          // --- BEGIN MODIFICATION ---
+          const now = Date.now();
+          // Only update userLocation state if the interval has passed
+          if (
+            now - lastLocationUpdateTimeRef.current >=
+            locationUpdateInterval
+          ) {
+            setUserLocation([pos.coords.longitude, pos.coords.latitude]);
+            lastLocationUpdateTimeRef.current = now;
+          }
+          // --- END MODIFICATION ---
         },
         (error) => {
           console.error("Error watching position:", error);
@@ -109,7 +126,7 @@ const MapWithTour = () => {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
-  }, []);
+  }, []); // Empty dependency array is correct for setup/teardown logic
 
   // Geofencing logic
   useEffect(() => {
@@ -160,7 +177,7 @@ const MapWithTour = () => {
     }
   }, [currentStep, steps.length, hasShownConfetti]);
 
-  // Map and marker logic
+  // Map and marker logic (for tour steps and initial map setup)
   useEffect(() => {
     // Only initialize the map once
     if (!mapRef.current) {
@@ -261,52 +278,6 @@ const MapWithTour = () => {
         .addTo(mapRef.current);
     });
 
-    if (userLocation) {
-      if (userMarkerRef.current) {
-        userMarkerRef.current.remove();
-      }
-      // Remove previous user location popup if it exists
-      if (userLocationPopupRef.current) {
-        userLocationPopupRef.current.remove();
-        userLocationPopupRef.current = null;
-      }
-
-      const el = document.createElement("div");
-      // Styling for a simple red dot
-      el.style.width = "22px";
-      el.style.height = "22px";
-      el.style.borderRadius = "50%";
-      el.style.backgroundColor = markerColors.user; // Using the existing user color
-      el.style.border = "2px solid white";
-      el.style.zIndex = "5"; // Ensure it's visible
-
-      userMarkerRef.current = new mapboxgl.Marker(el)
-        .setLngLat(userLocation)
-        .addTo(mapRef.current);
-
-      // Create and store the new user location popup
-      userLocationPopupRef.current = new mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false,
-        offset: 30,
-      })
-        .setLngLat(userLocation)
-        .setHTML(
-          `<div style="color:#ef4444;border-radius:1rem;padding:0.5rem 1.2rem;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:700;min-width:90px;text-align:center;border:none;box-shadow:none;">You are here</div>`
-        )
-        .addTo(mapRef.current);
-    } else {
-      // If userLocation becomes null, remove the marker and its popup
-      if (userMarkerRef.current) {
-        userMarkerRef.current.remove();
-        userMarkerRef.current = null;
-      }
-      if (userLocationPopupRef.current) {
-        userLocationPopupRef.current.remove();
-        userLocationPopupRef.current = null;
-      }
-    }
-
     // Responsive offset for mobile
     if (
       !mapRef.current ||
@@ -362,17 +333,73 @@ const MapWithTour = () => {
 
     return () => {
       markersRef.current.forEach((m) => m.remove());
+      // User marker and popup cleanup will be handled in their own useEffect
+    };
+  }, [steps, currentStep, legs]); // MODIFIED: Removed userLocation from deps
+
+  // useEffect for user location marker and popup
+  useEffect(() => {
+    if (!mapRef.current) return; // Ensure map is initialized
+
+    if (userLocation) {
+      // Update existing user marker or create a new one
+      if (userMarkerRef.current) {
+        userMarkerRef.current.setLngLat(userLocation);
+      } else {
+        const el = document.createElement("div");
+        el.style.width = "22px";
+        el.style.height = "22px";
+        el.style.borderRadius = "50%";
+        el.style.backgroundColor = markerColors.user;
+        el.style.border = "2px solid white";
+        el.style.zIndex = "5";
+        userMarkerRef.current = new mapboxgl.Marker(el)
+          .setLngLat(userLocation)
+          .addTo(mapRef.current);
+      }
+
+      // Update existing user location popup or create a new one
+      if (userLocationPopupRef.current) {
+        userLocationPopupRef.current.setLngLat(userLocation);
+      } else {
+        userLocationPopupRef.current = new mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          offset: 30,
+        })
+          .setLngLat(userLocation)
+          .setHTML(
+            `<div style="color:#ef4444;border-radius:1rem;padding:0.5rem 1.2rem;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:700;min-width:90px;text-align:center;border:none;box-shadow:none;">You are here</div>`
+          )
+          .addTo(mapRef.current);
+      }
+    } else {
+      // If userLocation becomes null, remove the marker and its popup
       if (userMarkerRef.current) {
         userMarkerRef.current.remove();
         userMarkerRef.current = null;
       }
-      // Clean up user location popup
+      if (userLocationPopupRef.current) {
+        userLocationPopupRef.current.remove();
+        userLocationPopupRef.current = null;
+      }
+    }
+
+    return () => {
+      // Cleanup user marker and popup when the component unmounts or userLocation becomes null
+      // This cleanup is specific to this effect.
+      // The removal logic when userLocation becomes null is already handled above.
+      // This ensures that if the component itself unmounts, these are cleaned.
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+        userMarkerRef.current = null;
+      }
       if (userLocationPopupRef.current) {
         userLocationPopupRef.current.remove();
         userLocationPopupRef.current = null;
       }
     };
-  }, [steps, currentStep, userLocation, legs]); // removed resetKey from deps
+  }, [userLocation]); // This effect ONLY depends on userLocation
 
   useEffect(() => {
     async function fetchRoute() {
