@@ -7,11 +7,8 @@ function App() {
 
   return (
     <div className="relative w-full h-screen bg-gray-100">
-      {showWelcome ? (
-        <Welcome onClose={() => setShowWelcome(false)} />
-      ) : (
-        <MapWithTour />
-      )}
+      {showWelcome && <Welcome onClose={() => setShowWelcome(false)} />}
+      <MapWithTour />
     </div>
   );
 }

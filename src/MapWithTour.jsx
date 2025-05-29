@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { tourSteps } from "./data/tourSteps";
 import StepCard from "./StepCard";
 import Confetti from "./Confetti";
@@ -93,6 +93,7 @@ const MapWithTour = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [resetKey, setResetKey] = useState(0); // force remount for reset
+  const [recenterKey, setRecenterKey] = useState(0); // for recentering
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -314,7 +315,7 @@ const MapWithTour = () => {
         userMarkerRef.current._userPopup.remove();
       }
     };
-  }, [steps, currentStep, userLocation, legs]);
+  }, [steps, currentStep, userLocation, legs, recenterKey]);
 
   useEffect(() => {
     async function fetchRoute() {
@@ -393,19 +394,23 @@ const MapWithTour = () => {
     setResetKey((k) => k + 1); // force remount StepCard
   };
 
-  const handleRecenter = () => {};
+  const handleRecenter = () => {
+    setRecenterKey((k) => k + 1);
+  };
 
   return (
     <div className="relative w-full h-screen">
-      {showConfetti && (
-        <Confetti>
-          <div
-            ref={mapContainer}
-            className="w-full h-screen fixed top-0 left-0 z-0"
-            style={{ minHeight: "60vh" }}
-          />
-        </Confetti>
-      )}
+      <AnimatePresence>
+        {showConfetti && (
+          <Confetti onClose={() => setShowConfetti(false)}>
+            <div
+              ref={mapContainer}
+              className="w-full h-screen fixed top-0 left-0 z-0"
+              style={{ minHeight: "60vh" }}
+            />
+          </Confetti>
+        )}
+      </AnimatePresence>
       {/* Map always rendered for overlay effect */}
       <div
         ref={mapContainer}
