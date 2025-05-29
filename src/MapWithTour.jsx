@@ -9,6 +9,26 @@ import Confetti from "./Confetti";
 mapboxgl.accessToken =
   "pk.eyJ1IjoibmlzY2hheWhyMTEiLCJhIjoiY20yeHB2dGwzMDZsMDJrcjRweHA3NnQwdyJ9.zJ4eHE9IMQ6RowiONFur0A";
 
+// Helper function to calculate distance between two coordinates using Haversine formula
+function haversineDistance(coords1, coords2) {
+  // coords1 and coords2 are [longitude, latitude]
+  const R = 6371e3; // Earth radius in metres
+  const lat1Rad = coords1[1] * (Math.PI / 180);
+  const lat2Rad = coords2[1] * (Math.PI / 180);
+  const deltaLatRad = (coords2[1] - coords1[1]) * (Math.PI / 180);
+  const deltaLonRad = (coords2[0] - coords1[0]) * (Math.PI / 180);
+
+  const a =
+    Math.sin(deltaLatRad / 2) * Math.sin(deltaLatRad / 2) +
+    Math.cos(lat1Rad) *
+      Math.cos(lat2Rad) *
+      Math.sin(deltaLonRad / 2) *
+      Math.sin(deltaLonRad / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // Distance in metres
+}
+
 const markerColors = {
   inactive: "#6B7280",
   active: "#2563EB",
@@ -48,52 +68,15 @@ function createMarkerElement(isActive) {
   return el;
 }
 
-function getDirectionStepForSpot(legs, spotIdx) {
-  if (!Array.isArray(legs) || spotIdx <= 0) return 0;
-  let stepIdx = 0;
-  for (let i = 0; i < spotIdx && i < legs.length; i++) {
-    stepIdx += legs[i].steps.length;
-  }
-  return stepIdx;
-}
-
-// Helper to get the current maneuver coordinate and bearing for the substep
-function getCurrentManeuverView(legs, steps, currentStep, subStep) {
-  if (
-    legs[currentStep] &&
-    legs[currentStep].steps &&
-    legs[currentStep].steps[subStep]
-  ) {
-    const step = legs[currentStep].steps[subStep];
-    const coord = step.maneuver.location;
-    // If geometry exists, calculate bearing from first to last point
-    let bearing = 20;
-    if (
-      step.geometry &&
-      step.geometry.coordinates &&
-      step.geometry.coordinates.length > 1
-    ) {
-      const [from, to] = [
-        step.geometry.coordinates[0],
-        step.geometry.coordinates[step.geometry.coordinates.length - 1],
-      ];
-      const dx = to[0] - from[0];
-      const dy = to[1] - from[1];
-      bearing = (Math.atan2(dx, dy) * 180) / Math.PI;
-      if (bearing < 0) bearing += 360;
-    }
-    return { coord, bearing };
-  }
-  // fallback to step marker
-  return { coord: steps[currentStep]?.coordinate, bearing: 20 };
-}
-
 const MapWithTour = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [userLocation, setUserLocation] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [hasShownConfetti, setHasShownConfetti] = useState(false);
-  const [recenterKey, setRecenterKey] = useState(0); // for recentering
+  const [geofencedStepIndex, setGeofencedStepIndex] = useState(null);
+  const [showGeofenceNotification, setShowGeofenceNotification] =
+    useState(false);
+  const watchIdRef = useRef(null);
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
@@ -105,18 +88,63 @@ const MapWithTour = () => {
   const [legs, setLegs] = useState([]);
   const steps = tourSteps;
 
-  // Get user location on mount
+  // Get user location on mount (real-time)
   useEffect(() => {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
+      watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
           setUserLocation([pos.coords.longitude, pos.coords.latitude]);
         },
-        () => {},
-        { enableHighAccuracy: true }
+        (error) => {
+          console.error("Error watching position:", error);
+          // Optionally handle error (e.g., set userLocation to null or show a message)
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     }
+
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
   }, []);
+
+  // Geofencing logic
+  useEffect(() => {
+    if (userLocation && steps.length > 0) {
+      let newGeofencedIndex = null;
+      let minDistance = Infinity;
+
+      for (let i = 0; i < steps.length; i++) {
+        const distance = haversineDistance(userLocation, steps[i].coordinate);
+        if (distance < 100) {
+          // 100 meters geofence
+          if (distance < minDistance) {
+            minDistance = distance;
+            newGeofencedIndex = i;
+          }
+        }
+      }
+
+      const currentGeofencedIndexInState = geofencedStepIndex;
+
+      if (newGeofencedIndex !== null) {
+        if (currentGeofencedIndexInState !== newGeofencedIndex) {
+          setGeofencedStepIndex(newGeofencedIndex);
+          setShowGeofenceNotification(true);
+        }
+      } else {
+        if (currentGeofencedIndexInState !== null) {
+          setGeofencedStepIndex(null);
+        }
+      }
+    } else {
+      if (geofencedStepIndex !== null) {
+        setGeofencedStepIndex(null);
+      }
+    }
+  }, [userLocation, steps, geofencedStepIndex]);
 
   // Show confetti only once when arriving at the last step
   useEffect(() => {
@@ -235,23 +263,18 @@ const MapWithTour = () => {
     if (userLocation) {
       if (userMarkerRef.current) userMarkerRef.current.remove();
       const el = document.createElement("div");
-      el.style.width = "24px";
-      el.style.height = "32px";
-      el.style.background = "none";
-      el.innerHTML = `
-        <svg width="100%" height="100%" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <g filter="drop-shadow(0 2px 6px rgba(0,0,0,0.2))">
-            <path d="M16 0C8.268 0 2 6.268 2 14.001c0 7.732 12.07 24.13 13.01 25.39a2 2 0 0 0 3.98 0C17.93 38.13 30 21.733 30 14.001 30 6.268 23.732 0 16 0z" fill="${markerColors.user}" stroke="#fff" stroke-width="2"/>
-            <circle cx="16" cy="14" r="6" fill="#fff"/>
-            <circle cx="16" cy="14" r="4" fill="${markerColors.user}"/>
-          </g>
-        </svg>
-      `;
+      // Styling for a simple red dot
+      el.style.width = "22px";
+      el.style.height = "22px";
+      el.style.borderRadius = "50%";
+      el.style.backgroundColor = markerColors.user; // Using the existing user color
+      el.style.border = "2px solid white";
+      el.style.zIndex = "5"; // Ensure it's visible
+
       userMarkerRef.current = new mapboxgl.Marker(el)
         .setLngLat(userLocation)
         .addTo(mapRef.current);
 
-      // Add always-on popup for user location
       new mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false,
@@ -259,27 +282,9 @@ const MapWithTour = () => {
       })
         .setLngLat(userLocation)
         .setHTML(
-          `<div style="background:rgba(17,24,39,0.95);color:#ef4444;border-radius:1rem;padding:0.5rem 1.2rem;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:700;min-width:90px;text-align:center;border:none;box-shadow:none;">You are here</div>`
+          `<div style="color:#ef4444;border-radius:1rem;padding:0.5rem 1.2rem;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:700;min-width:90px;text-align:center;border:none;box-shadow:none;">You are here</div>`
         )
         .addTo(mapRef.current);
-      // Directly style the user popup content
-      setTimeout(() => {
-        const popupContent = document.querySelectorAll(
-          ".mapboxgl-popup-content"
-        );
-        popupContent.forEach((el) => {
-          el.style.background = "rgba(17, 24, 39, 0.9)"; // slightly more transparent
-          el.style.color = "#fff";
-          el.style.borderRadius = "1rem";
-          el.style.boxShadow = "0 3px 18px rgba(0, 0, 0, 0.2)";
-          el.style.padding = "0.4rem 0.9rem"; // slimmer padding
-          el.style.fontFamily = "'DM Sans', sans-serif";
-          el.style.fontSize = "0.85rem"; // smaller font size
-          el.style.fontWeight = "500";
-          el.style.minWidth = "80px";
-          el.style.textAlign = "center";
-        });
-      }, 0);
     }
 
     // Responsive offset for mobile
@@ -423,53 +428,82 @@ const MapWithTour = () => {
   };
 
   const handleRecenter = () => {
-    setRecenterKey((k) => k + 1);
+    if (mapRef.current) {
+      const map = mapRef.current;
+      let targetStep;
+
+      if (geofencedStepIndex !== null && steps[geofencedStepIndex]) {
+        targetStep = steps[geofencedStepIndex];
+      } else if (steps[currentStep]) {
+        targetStep = steps[currentStep];
+      }
+
+      if (targetStep) {
+        const centerCoord = targetStep.coordinate;
+        const original = map.project(centerCoord);
+        const isMobile = window.innerWidth <= 640;
+        let cardHeight = 0;
+        // Attempt to query the StepCard element for its height
+        const stepCardElement = document.querySelector(".fixed.bottom-0");
+        if (stepCardElement) {
+          cardHeight = stepCardElement.offsetHeight;
+        } else {
+          // Fallback or default height if the card isn't found or for non-mobile
+          cardHeight = isMobile ? 200 : 140; // Example fallback heights
+        }
+
+        const offsetY = isMobile ? cardHeight / 2 : 0; // Only apply vertical offset on mobile
+        const newCenter = map.unproject([original.x, original.y - offsetY]);
+
+        map.flyTo({
+          center: newCenter, // Use the adjusted center
+          zoom: 17.5, // You might want to adjust zoom level based on context
+          pitch: 45,
+          bearing: 60,
+          speed: 0.9,
+          curve: 1.42,
+          essential: true,
+        });
+      }
+    }
   };
 
   return (
     <div className="relative w-full h-screen">
+      {/* Geofence Notification */}
+      {geofencedStepIndex !== null &&
+        showGeofenceNotification &&
+        steps[geofencedStepIndex] && (
+          <div className="fixed top-4 left-0 right-0 z-[1050] flex justify-center pointer-events-none font-dm-sans tracking-tight">
+            <motion.div
+              initial={{ y: -60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+              className="relative backdrop-blur-md bg-black/80 rounded-full w-full mx-4 max-w-xs sm:max-w-sm md:max-w-md py-3 px-10 pointer-events-auto flex items-center justify-center shadow-xl"
+            >
+              <p className="text-cyan-300 text-sm text-center">
+                You are near:{" "}
+                <span className="font-semibold text-white">
+                  {steps[geofencedStepIndex].name}
+                </span>
+              </p>
+              <button
+                onClick={() => setShowGeofenceNotification(false)}
+                className="absolute top-1/2 right-3 transform -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs leading-none focus:outline-none focus:ring-2 focus:ring-white/50"
+                aria-label="Close notification"
+              >
+                &#x2715; {/* Close icon (X) */}
+              </button>
+            </motion.div>
+          </div>
+        )}
+
       {showConfetti && <Confetti onClose={() => setShowConfetti(false)} />}
       <div
         ref={mapContainer}
         className="w-full h-screen fixed top-0 left-0 z-10"
         style={{ minHeight: "60vh" }}
       />
-      {/* <div className="fixed top-2 left-0 right-0 z-20 flex justify-center pointer-events-none font-dm-sans tracking-tight">
-        <motion.div
-          initial={{ y: -40, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
-          className="backdrop-blur-md bg-black/90 rounded-full w-full mx-2 max-w-sm py-3 px-8 pointer-events-auto flex flex-col items-center"
-          style={{ minHeight: 60, maxHeight: 240 }}
-        >
-          <h3 className="text-[0.6rem] font-bold mb-1 text-center text-cyan-300 tracking-wide uppercase drop-shadow">
-            {currentStep === steps.length - 1
-              ? "Final Step"
-              : `Directions for Step ${currentStep + 1}`}
-          </h3>
-          <div className="w-full flex flex-col items-center">
-            {legs[currentStep]?.steps?.length > 0 ? (
-              <ul className="w-full text-cyan-200 text-sm space-y-1">
-                {legs[currentStep].steps.map((s, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="font-bold text-cyan-400">{idx + 1}.</span>
-                    <span>
-                      {directions && directions.length > 0
-                        ? directions[
-                            getDirectionStepForSpot(legs, currentStep) + idx
-                          ]
-                        : s.maneuver.instruction}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <span className="text-gray-400">No directions available.</span>
-            )}
-          </div>
-        </motion.div>
-      </div> */}
-      {/* Confetti CSS */}
       <style>{`
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
         .animate-fade-in { animation: fade-in 0.7s; }
