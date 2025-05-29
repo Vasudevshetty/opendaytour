@@ -18,7 +18,8 @@ const StepCard = ({
   const totalHops = Array.isArray(steps) ? steps.length : undefined;
   const [expanded, setExpanded] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
-  const images = Array.isArray(step.images) ? step.images : [];
+  // const images = Array.isArray(step.images) ? step.images : [];
+  const images = ["/campus/js1.jpg", "/campus/js2.jpg"]; // Placeholder images
 
   const handlePrevImage = (e) => {
     e.stopPropagation();
@@ -76,7 +77,7 @@ const StepCard = ({
             </div>{" "}
             <div className="flex items-center gap-2">
               <button
-                className="w-12 h-12 bg-cyan-700 hover:bg-cyan-900 text-white rounded-full shadow font-bold transition-all duration-200 mx-0.5 flex items-center justify-center"
+                className="w-12 h-12 bg-cyan-700 cursor-pointer hover:bg-cyan-900 text-white rounded-full shadow font-bold transition-all duration-200 mx-0.5 flex items-center justify-center"
                 onClick={onResetTour}
                 style={{ marginLeft: 2, marginRight: 2 }}
                 title="Reset Tour"
@@ -143,19 +144,28 @@ const StepCard = ({
             animate={{
               height: expanded ? (images.length ? 140 : 0) : 0,
               opacity: expanded ? 1 : 0,
+              scale: expanded ? 1 : 0.95,
             }}
             transition={{
-              height: { duration: 0.45, ease: [0.4, 0, 0.2, 1] },
-              opacity: { duration: 0.25 },
+              height: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
+              opacity: {
+                duration: expanded ? 0.3 : 0.4,
+                delay: expanded ? 0.1 : 0,
+                ease: [0.4, 0, 0.2, 1],
+              },
+              scale: {
+                duration: 0.4,
+                ease: [0.4, 0, 0.2, 1],
+              },
             }}
             style={{ display: expanded && images.length ? "flex" : "none" }}
           >
             {images.length > 0 && (
-              <div className="relative w-52 h-32 flex items-center justify-center">
+              <div className="relative w-56 h-32 flex items-center justify-center">
                 <img
                   src={images[carouselIndex]}
                   alt={`Step image ${carouselIndex + 1}`}
-                  className="rounded-xl w-full h-full object-cover border border-cyan-400 shadow-lg"
+                  className="rounded-xl w-full h-full object-cover shadow-lg"
                   style={{ transition: "opacity 0.3s" }}
                 />
                 {images.length > 1 && (
