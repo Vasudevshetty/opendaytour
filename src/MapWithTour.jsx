@@ -76,6 +76,7 @@ const MapWithTour = () => {
   const [geofencedStepIndex, setGeofencedStepIndex] = useState(null);
   const [showGeofenceNotification, setShowGeofenceNotification] =
     useState(false);
+  const [showGeofenceFallback, setShowGeofenceFallback] = useState(false); // Added state for fallback
   const watchIdRef = useRef(null);
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -145,22 +146,27 @@ const MapWithTour = () => {
         }
       }
 
-      const currentGeofencedIndexInState = geofencedStepIndex;
-
       if (newGeofencedIndex !== null) {
-        if (currentGeofencedIndexInState !== newGeofencedIndex) {
+        // User is in a geofence
+        if (geofencedStepIndex !== newGeofencedIndex) {
           setGeofencedStepIndex(newGeofencedIndex);
-          setShowGeofenceNotification(true);
+          setShowGeofenceNotification(true); // Show "You are near X"
         }
+        setShowGeofenceFallback(false); // Not showing fallback if geofenced
       } else {
-        if (currentGeofencedIndexInState !== null) {
+        // User is NOT in any geofence, but userLocation exists
+        if (geofencedStepIndex !== null) {
           setGeofencedStepIndex(null);
+          // setShowGeofenceNotification(false); // Let "You are near X" hide via its own close button or timeout
         }
+        setShowGeofenceFallback(true); // Show fallback: "You are not near any spots"
+        setShowGeofenceNotification(false); // Ensure the specific geofence notification is hidden if fallback is shown
       }
     } else {
-      if (geofencedStepIndex !== null) {
-        setGeofencedStepIndex(null);
-      }
+      // No userLocation or no steps
+      setGeofencedStepIndex(null); // Clear any geofence
+      setShowGeofenceFallback(false); // Don't show fallback if no location data
+      setShowGeofenceNotification(false); // Don't show specific geofence notification
     }
   }, [userLocation, steps, geofencedStepIndex]);
 
@@ -509,25 +515,41 @@ const MapWithTour = () => {
       const map = mapRef.current;
       map.stop(); // Add this to stop any ongoing animation
 
-      let targetStep;
+      let centerCoord;
+      let targetNameForLog = "Unknown"; // For logging
 
       if (geofencedStepIndex !== null && steps[geofencedStepIndex]) {
-        targetStep = steps[geofencedStepIndex];
+        centerCoord = steps[geofencedStepIndex].coordinate;
+        targetNameForLog = `Geofenced Spot: ${steps[geofencedStepIndex].name}`;
+      } else if (userLocation) {
+        // Not geofenced, but user location is available
+        centerCoord = userLocation;
+        targetNameForLog = "User\\'s Current Location";
       } else if (steps[currentStep]) {
-        targetStep = steps[currentStep];
+        // Fallback to current step if no geofence and no user location
+        centerCoord = steps[currentStep].coordinate;
+        targetNameForLog = `Current Tour Step: ${steps[currentStep].name}`;
       } else {
-        console.warn("handleRecenter: No target step could be determined.");
-        return;
-      }
-
-      if (!targetStep || !targetStep.coordinate) {
         console.warn(
-          "handleRecenter: Target step is invalid or has no coordinate."
+          "handleRecenter: No target coordinate could be determined."
         );
         return;
       }
 
-      const centerCoord = targetStep.coordinate;
+      if (
+        !centerCoord ||
+        !Array.isArray(centerCoord) ||
+        centerCoord.length !== 2
+      ) {
+        console.warn(
+          "handleRecenter: Target coordinate is invalid.",
+          centerCoord
+        );
+        return;
+      }
+
+      console.log(`handleRecenter: Targeting ${targetNameForLog}`, centerCoord);
+
       const original = map.project(centerCoord);
 
       if (!original) {
@@ -538,6 +560,8 @@ const MapWithTour = () => {
       }
 
       const isMobile = window.innerWidth <= 640;
+      console.log(`handleRecenter: isMobile = ${isMobile}`);
+
       let cardHeight = 0;
       const stepCardElement = document.querySelector(".fixed.bottom-0");
       if (stepCardElement) {
@@ -547,11 +571,19 @@ const MapWithTour = () => {
       }
 
       const offsetY = isMobile ? cardHeight / 2 : 0;
+      console.log(
+        `handleRecenter: Calculated offsetY = ${offsetY} (cardHeight: ${cardHeight})`
+      );
+
       const newCenter = map.unproject([original.x, original.y - offsetY]);
+      console.log(
+        `handleRecenter: New calculated center for map.flyTo:`,
+        newCenter
+      );
 
       map.flyTo({
-        center: newCenter, // Use the adjusted center
-        zoom: 17.5, // You might want to adjust zoom level based on context
+        center: newCenter,
+        zoom: userLocation && !geofencedStepIndex ? 18.5 : 17.5, // Zoom in a bit more if centering on user
         pitch: 45,
         bearing: 60,
         speed: 0.9,
@@ -590,6 +622,23 @@ const MapWithTour = () => {
             </motion.div>
           </div>
         )}
+
+      {/* Geofence Fallback Notification */}
+      {showGeofenceFallback && (
+        <div className="fixed top-4 left-0 right-0 z-[1050] flex justify-center pointer-events-none font-dm-sans tracking-tight">
+          <motion.div
+            initial={{ y: -60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
+            className="relative backdrop-blur-md bg-yellow-500/90 text-black rounded-full w-full mx-4 max-w-xs sm:max-w-sm md:max-w-md py-3 px-6 pointer-events-auto flex items-center justify-center shadow-xl"
+          >
+            <p className="text-sm text-center font-medium">
+              You are not currently near any tour spots. Move closer to a spot
+              to get started.
+            </p>
+          </motion.div>
+        </div>
+      )}
 
       {showConfetti && <Confetti onClose={() => setShowConfetti(false)} />}
       <div
