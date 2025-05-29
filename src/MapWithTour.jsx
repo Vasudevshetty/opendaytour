@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { motion } from "framer-motion";
 
 mapboxgl.accessToken =
   "pk.eyJ1IjoibmlzY2hheWhyMTEiLCJhIjoiY20yeHB2dGwzMDZsMDJrcjRweHA3NnQwdyJ9.zJ4eHE9IMQ6RowiONFur0A";
@@ -224,12 +225,12 @@ const MapWithTour = ({
         style={{ minHeight: "60vh" }}
       />
       <div className="fixed top-2 left-0 right-0 z-20 flex justify-center pointer-events-none font-dm-sans tracking-tight">
-        <div
+        <motion.div
+          initial={{ y: -40, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
           className="backdrop-blur-md bg-black/90 rounded-full w-full mx-2 max-w-sm  py-3 px-8 mb-0 pointer-events-auto flex flex-col items-center relative overflow-hidden"
-          style={{
-            minHeight: 60,
-            maxHeight: 140,
-          }}
+          style={{ minHeight: 60, maxHeight: 140 }}
         >
           <h3 className="text-[0.6rem] font-bold mb-1 text-center text-cyan-300 tracking-wide uppercase letter-spacing-1 drop-shadow">
             Step {subStep + 1} of {legSteps}
@@ -243,7 +244,7 @@ const MapWithTour = ({
             >
               Prev
             </button>
-            <div className="flex-1 text-center text-cyan-200 font-medium text-xl px-1 py-1 flex flex-col items-center min-h-[28px]">
+            <div className="flex-1 text-center text-white font-medium text-xl px-1 py-1 flex flex-col items-center min-h-[28px]">
               <span style={{ wordBreak: "break-word", lineHeight: "1.4" }}>
                 {directions.length > 0
                   ? directions[directionStepIdx + subStep]
@@ -271,7 +272,7 @@ const MapWithTour = ({
               />
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

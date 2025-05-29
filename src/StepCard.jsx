@@ -15,9 +15,6 @@ const StepCard = ({
   const hopNumber =
     typeof currentStepIndex === "number" ? currentStepIndex + 1 : 1;
   const totalHops = Array.isArray(steps) ? steps.length : undefined;
-  const stepsRemaining = totalHops
-    ? Math.max(totalHops - hopNumber, 0)
-    : undefined;
   const [expanded, setExpanded] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const images = Array.isArray(step.images) ? step.images : [];
@@ -36,12 +33,11 @@ const StepCard = ({
       <motion.div
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 100, opacity: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        transition={{ duration: 0.7, ease: [0.4, 0, 0.2, 1] }}
         className="fixed bottom-0 left-0 right-0 z-20 flex justify-center pointer-events-none font-dm-sans tracking-tight"
       >
         <div
-          className="backdrop-blur-md bg-black/90  shadow-2xl rounded-t-3xl w-full max-w-md mx-auto px-7 py-5 mb-0 pointer-events-auto flex flex-col items-center relative overflow-hidden"
+          className="backdrop-blur-md bg-[#0e0e0e]  shadow-2xl rounded-t-3xl w-full max-w-md mx-auto px-7 py-5 mb-0 pointer-events-auto flex flex-col items-center relative overflow-hidden"
           style={{
             boxShadow: "0 8px 32px 0 rgba(0,0,0,0.7)",
 
