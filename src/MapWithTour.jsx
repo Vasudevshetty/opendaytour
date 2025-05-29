@@ -80,6 +80,7 @@ const MapWithTour = () => {
   const [isLoading, setIsLoading] = useState(true); // Added for loader
   const [isVirtualMode, setIsVirtualMode] = useState(false); // Added for virtual tour
   const [virtualModeNotification, setVirtualModeNotification] = useState(null);
+  const [progress, setProgress] = useState(0);
 
   const watchIdRef = useRef(null);
   const mapContainer = useRef(null);
@@ -747,6 +748,26 @@ const MapWithTour = () => {
     });
   };
 
+  // Animate progress bar while loading
+  useEffect(() => {
+    if (!isLoading) {
+      setProgress(100);
+      return;
+    }
+    setProgress(0);
+    let frame;
+    let value = 0;
+    const animate = () => {
+      if (!isLoading) return;
+      value += Math.random() * 2 + 0.5; // randomize for realism
+      if (value > 90) value = 90;
+      setProgress(value);
+      frame = requestAnimationFrame(animate);
+    };
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [isLoading]);
+
   return (
     <div className="relative w-full h-screen">
       {virtualModeNotification && (
@@ -764,36 +785,71 @@ const MapWithTour = () => {
       )}
 
       {isLoading && (
-        <div className="fixed inset-0 bg-white flex flex-col items-center justify-center z-[5000] pointer-events-auto">
-          <svg
-            className="animate-spin h-12 w-12 text-blue-600 mb-4"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+          className="fixed inset-0 bg-black flex flex-col items-center justify-center z-[5000] pointer-events-auto"
+        >
+          {/* Map Pin with Pulse and Float */}
+          <motion.div
+            animate={{ y: [0, -10, 0] }}
+            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+            className="relative mb-8"
           >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          <p className="text-xl font-semibold text-gray-700">
-            Loading Tour Experience...
-          </p>
-          <p className="text-sm text-gray-500">
-            Please wait while we prepare the map and location services.
-          </p>
-        </div>
-      )}
+            {/* Pulse Circle */}
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: [1, 1.6], opacity: [0.3, 0] }}
+              transition={{ repeat: Infinity, duration: 1.6, ease: "easeOut" }}
+              className="absolute inset-0 rounded-full bg-cyan-400 opacity-50 z-0"
+            />
 
+            {/* Map Pin SVG */}
+            <svg
+              className="relative z-10 h-20 w-20 text-cyan-600 drop-shadow-xl"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 4.5 7 13 7 13s7-8.5 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5 14.5 7.62 14.5 9 13.38 11.5 12 11.5z" />
+            </svg>
+          </motion.div>
+
+          {/* Progress Bar */}
+          <div className="w-64 max-w-xs h-3 bg-gray-800 rounded-full overflow-hidden mb-6">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: progress + "%" }}
+              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+              className="h-full bg-gradient-to-r from-cyan-400 to-blue-500 rounded-full shadow-inner"
+              style={{ minWidth: 8 }}
+            />
+          </div>
+
+          {/* Title */}
+          <motion.h2
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.6 }}
+            className="text-3xl font-extrabold text-white tracking-tight mb-2"
+          >
+            Navigating Your Tour
+          </motion.h2>
+
+          {/* Subtext */}
+          <motion.p
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+            className="text-md text-gray-200 text-center max-w-md px-6"
+          >
+            Initializing your immersive map experience. Please hold tight while
+            we load location services and terrain data.
+          </motion.p>
+        </motion.div>
+      )}
       {/* Geofence Notification */}
       {!isVirtualMode &&
         geofencedStepIndex !== null &&
@@ -822,7 +878,6 @@ const MapWithTour = () => {
             </motion.div>
           </div>
         )}
-
       {/* Geofence Fallback Notification */}
       {!isVirtualMode && showGeofenceFallback && (
         <div className="fixed top-4 left-0 right-0 z-[1050] flex justify-center pointer-events-none font-dm-sans tracking-tight">
@@ -846,7 +901,6 @@ const MapWithTour = () => {
           </motion.div>
         </div>
       )}
-
       {showConfetti && <Confetti onClose={() => setShowConfetti(false)} />}
       <div
         ref={mapContainer}
