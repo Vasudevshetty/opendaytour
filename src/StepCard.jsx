@@ -125,7 +125,7 @@ const StepCard = ({
               )}
             </div>
           </div>{" "}
-          <h2 className="text-2xl font-bold mb-1 text-center text-gray-100 drop-shadow-lg leading-tight">
+          <h2 className="text-xl font-bold mb-1 text-center text-gray-100 drop-shadow-lg leading-tight">
             {step.name}
           </h2>
           <p className="text-gray-300 mb-2 text-center text-xs leading-snug px-2">
