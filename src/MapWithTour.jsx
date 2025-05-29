@@ -154,36 +154,11 @@ const MapWithTour = ({
         center: steps[0].coordinate,
         zoom: 18,
       });
-
-      mapRef.current.on("load", () => {
-        mapRef.current.addSource("route", {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "LineString",
-              coordinates: steps.map((s) => s.coordinate),
-            },
-          },
-        });
-        mapRef.current.addLayer({
-          id: "route",
-          type: "line",
-          source: "route",
-          layout: { "line-join": "round", "line-cap": "round" },
-          paint: {
-            "line-color": markerColors.active,
-            "line-width": 4,
-          },
-        });
-      });
     }
 
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = steps.map((step, idx) => {
       const el = createMarkerElement(idx === currentStep, idx + 1);
-
       el.addEventListener("click", () => setCurrentStep(idx));
 
       // Show popup on hover or if marker is active
@@ -324,32 +299,38 @@ const MapWithTour = ({
       }, 0);
     }
 
-    // Center on the current maneuver location for substeps, or marker for step change
+    // Responsive offset for mobile: always center marker above StepCard
+    const isMobile = window.innerWidth <= 640;
+    let cardHeight = 0;
+    if (isMobile) {
+      // Use only a valid selector for the StepCard
+      const card = document.querySelector(".backdrop-blur-md");
+      cardHeight = card ? card.offsetHeight : 140;
+    }
+    let centerCoord = steps[currentStep].coordinate;
     if (
-      mapRef.current &&
       legs.length &&
       legs[currentStep] &&
       legs[currentStep].steps &&
       legs[currentStep].steps.length > 0
     ) {
-      const { coord, bearing } = getCurrentManeuverView(
+      const { coord } = getCurrentManeuverView(
         legs,
         steps,
         currentStep,
         subStep
       );
-      mapRef.current.jumpTo({
-        center: coord,
+      centerCoord = coord;
+    }
+    if (mapRef.current) {
+      const map = mapRef.current;
+      const original = map.project(centerCoord);
+      const offsetY = isMobile ? cardHeight / 2 : 0;
+      const newCenter = map.unproject([original.x, original.y - offsetY]);
+      map.jumpTo({
+        center: newCenter,
         zoom: 19.5,
-        pitch: 75,
-        bearing: bearing,
-        essential: true,
-      });
-    } else if (mapRef.current && steps[currentStep]) {
-      mapRef.current.jumpTo({
-        center: steps[currentStep].coordinate,
-        zoom: 19.5,
-        pitch: 75,
+        pitch: 60, // slightly less pitch for mobile
         bearing: 20,
         essential: true,
       });
@@ -362,19 +343,7 @@ const MapWithTour = ({
         userMarkerRef.current._userPopup.remove();
       }
     };
-  }, [steps, currentStep, userLocation, setCurrentStep]);
-
-  useEffect(() => {
-    if (mapRef.current && userLocation) {
-      mapRef.current.flyTo({
-        center: userLocation,
-        zoom: 18,
-        pitch: 75,
-        bearing: 20,
-        essential: true,
-      });
-    }
-  }, [recenterKey, userLocation]);
+  }, [steps, currentStep, userLocation, setCurrentStep, legs, subStep]);
 
   useEffect(() => {
     async function fetchRoute() {
@@ -390,12 +359,31 @@ const MapWithTour = ({
         setDirections(
           allLegs.flatMap((leg) => leg.steps.map((s) => s.maneuver.instruction))
         );
-
+        // Set the route geojson from the Directions API
         if (mapRef.current.getSource("route")) {
           mapRef.current.getSource("route").setData({
             type: "Feature",
             properties: {},
             geometry: routeGeo,
+          });
+        } else {
+          mapRef.current.addSource("route", {
+            type: "geojson",
+            data: {
+              type: "Feature",
+              properties: {},
+              geometry: routeGeo,
+            },
+          });
+          mapRef.current.addLayer({
+            id: "route",
+            type: "line",
+            source: "route",
+            layout: { "line-join": "round", "line-cap": "round" },
+            paint: {
+              "line-color": markerColors.active,
+              "line-width": 4,
+            },
           });
         }
       }
