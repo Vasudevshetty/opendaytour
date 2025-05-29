@@ -2,7 +2,7 @@ import { useRef, useEffect, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { motion } from "framer-motion";
-import { tourSteps } from "./data/tourSteps";
+import { tourSteps } from "./data/tour";
 import StepCard from "./StepCard";
 import Confetti from "./Confetti";
 
@@ -308,6 +308,14 @@ const MapWithTour = () => {
     }
 
     // Responsive offset for mobile
+    if (
+      !mapRef.current ||
+      !steps[currentStep] ||
+      !steps[currentStep].coordinate
+    ) {
+      return;
+    }
+
     let centerCoord = steps[currentStep].coordinate;
     if (
       legs.length &&
@@ -318,13 +326,30 @@ const MapWithTour = () => {
       // No substep logic, just use the step's coordinate
       centerCoord = steps[currentStep].coordinate;
     }
+
     if (mapRef.current) {
+      // This check is slightly redundant due to the one above, but harmless
       const map = mapRef.current;
       const original = map.project(centerCoord);
+
+      if (!original) {
+        console.warn(
+          "Map centering useEffect: map.project(centerCoord) failed."
+        );
+        return;
+      }
+
       const isMobile = window.innerWidth <= 640;
-      const card = document.querySelector(".backdrop-blur-md");
-      const cardHeight = isMobile && card ? card.offsetHeight : 140;
-      const offsetY = isMobile ? cardHeight / 2 : 0;
+      let calculatedCardHeight = 0;
+      // Use the consistent selector for the StepCard
+      const stepCardElement = document.querySelector(".fixed.bottom-0");
+      if (stepCardElement) {
+        calculatedCardHeight = stepCardElement.offsetHeight;
+      } else {
+        // Consistent fallback logic
+        calculatedCardHeight = isMobile ? 200 : 140;
+      }
+      const offsetY = isMobile ? calculatedCardHeight / 2 : 0;
       const newCenter = map.unproject([original.x, original.y - offsetY]);
       map.jumpTo({
         center: newCenter,
@@ -455,41 +480,57 @@ const MapWithTour = () => {
   const handleRecenter = () => {
     if (mapRef.current) {
       const map = mapRef.current;
+      map.stop(); // Add this to stop any ongoing animation
+
       let targetStep;
 
       if (geofencedStepIndex !== null && steps[geofencedStepIndex]) {
         targetStep = steps[geofencedStepIndex];
       } else if (steps[currentStep]) {
         targetStep = steps[currentStep];
+      } else {
+        console.warn("handleRecenter: No target step could be determined.");
+        return;
       }
 
-      if (targetStep) {
-        const centerCoord = targetStep.coordinate;
-        const original = map.project(centerCoord);
-        const isMobile = window.innerWidth <= 640;
-        let cardHeight = 0;
-        // Attempt to query the StepCard element for its height
-        const stepCardElement = document.querySelector(".fixed.bottom-0");
-        if (stepCardElement) {
-          cardHeight = stepCardElement.offsetHeight;
-        } else {
-          // Fallback or default height if the card isn't found or for non-mobile
-          cardHeight = isMobile ? 200 : 140; // Example fallback heights
-        }
-
-        const offsetY = isMobile ? cardHeight / 2 : 0; // Only apply vertical offset on mobile
-        const newCenter = map.unproject([original.x, original.y - offsetY]);
-
-        map.flyTo({
-          center: newCenter, // Use the adjusted center
-          zoom: 17.5, // You might want to adjust zoom level based on context
-          pitch: 45,
-          bearing: 60,
-          speed: 0.9,
-          curve: 1.42,
-          essential: true,
-        });
+      if (!targetStep || !targetStep.coordinate) {
+        console.warn(
+          "handleRecenter: Target step is invalid or has no coordinate."
+        );
+        return;
       }
+
+      const centerCoord = targetStep.coordinate;
+      const original = map.project(centerCoord);
+
+      if (!original) {
+        console.warn(
+          "handleRecenter: map.project(centerCoord) failed. Map may not be ready or coordinate is invalid."
+        );
+        return;
+      }
+
+      const isMobile = window.innerWidth <= 640;
+      let cardHeight = 0;
+      const stepCardElement = document.querySelector(".fixed.bottom-0");
+      if (stepCardElement) {
+        cardHeight = stepCardElement.offsetHeight;
+      } else {
+        cardHeight = isMobile ? 200 : 140; // Fallback heights
+      }
+
+      const offsetY = isMobile ? cardHeight / 2 : 0;
+      const newCenter = map.unproject([original.x, original.y - offsetY]);
+
+      map.flyTo({
+        center: newCenter, // Use the adjusted center
+        zoom: 17.5, // You might want to adjust zoom level based on context
+        pitch: 45,
+        bearing: 60,
+        speed: 0.9,
+        curve: 1.42,
+        essential: true,
+      });
     }
   };
 
