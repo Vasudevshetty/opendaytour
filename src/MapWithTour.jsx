@@ -81,6 +81,7 @@ const MapWithTour = () => {
   const mapRef = useRef(null);
   const markersRef = useRef([]);
   const userMarkerRef = useRef(null);
+  const userLocationPopupRef = useRef(null); // <-- Add new ref for user location popup
   const popupRef = useRef(
     new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
   );
@@ -261,7 +262,15 @@ const MapWithTour = () => {
     });
 
     if (userLocation) {
-      if (userMarkerRef.current) userMarkerRef.current.remove();
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+      }
+      // Remove previous user location popup if it exists
+      if (userLocationPopupRef.current) {
+        userLocationPopupRef.current.remove();
+        userLocationPopupRef.current = null;
+      }
+
       const el = document.createElement("div");
       // Styling for a simple red dot
       el.style.width = "22px";
@@ -275,7 +284,8 @@ const MapWithTour = () => {
         .setLngLat(userLocation)
         .addTo(mapRef.current);
 
-      new mapboxgl.Popup({
+      // Create and store the new user location popup
+      userLocationPopupRef.current = new mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false,
         offset: 30,
@@ -285,6 +295,16 @@ const MapWithTour = () => {
           `<div style="color:#ef4444;border-radius:1rem;padding:0.5rem 1.2rem;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:700;min-width:90px;text-align:center;border:none;box-shadow:none;">You are here</div>`
         )
         .addTo(mapRef.current);
+    } else {
+      // If userLocation becomes null, remove the marker and its popup
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+        userMarkerRef.current = null;
+      }
+      if (userLocationPopupRef.current) {
+        userLocationPopupRef.current.remove();
+        userLocationPopupRef.current = null;
+      }
     }
 
     // Responsive offset for mobile
@@ -317,9 +337,14 @@ const MapWithTour = () => {
 
     return () => {
       markersRef.current.forEach((m) => m.remove());
-      if (userMarkerRef.current) userMarkerRef.current.remove();
-      if (userMarkerRef.current && userMarkerRef.current._userPopup) {
-        userMarkerRef.current._userPopup.remove();
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+        userMarkerRef.current = null;
+      }
+      // Clean up user location popup
+      if (userLocationPopupRef.current) {
+        userLocationPopupRef.current.remove();
+        userLocationPopupRef.current = null;
       }
     };
   }, [steps, currentStep, userLocation, legs]); // removed resetKey from deps
