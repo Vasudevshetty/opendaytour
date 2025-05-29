@@ -594,8 +594,10 @@ const MapWithTour = () => {
       {showConfetti && <Confetti onClose={() => setShowConfetti(false)} />}
       <div
         ref={mapContainer}
-        className="w-full h-screen fixed top-0 left-0 z-10"
-        style={{ minHeight: "60vh" }}
+        className="w-full sm:h-screen fixed top-0 left-0 z-10 h-[80vh]"
+        style={{
+          minHeight: "60vh",
+        }}
       />
       <style>{`
         @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
