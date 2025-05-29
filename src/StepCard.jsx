@@ -35,6 +35,7 @@ const StepCard = ({
   const [isImageSectionExpanded, setIsImageSectionExpanded] = useState(false); // Renamed from 'expanded'
   const [isCardExpanded, setIsCardExpanded] = useState(false); // New state for card collapse/expand
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [isHovering, setIsHovering] = useState(false); // New state for hover
   const images =
     // Array.isArray(step.images) && step.images.length > 0
     //   ? step.images :
@@ -56,15 +57,15 @@ const StepCard = ({
   // Effect for auto-collapsing the card
   useEffect(() => {
     let timer;
-    if (isCardExpanded) {
+    if (isCardExpanded && !isHovering && !isVirtualMode) {
       timer = setTimeout(() => {
         setIsCardExpanded(false);
-      }, 3000); // Auto-collapse after 3 seconds
+      }, 5000); // Auto-collapse after 5 seconds
     }
     return () => {
       clearTimeout(timer);
     };
-  }, [isCardExpanded]);
+  }, [isCardExpanded, isHovering, isVirtualMode]);
 
   const handlePrevImage = (e) => {
     e.stopPropagation();
@@ -82,10 +83,12 @@ const StepCard = ({
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
         className="fixed bottom-2 left-1/2 right-auto z-30 font-dm-sans tracking-tight transform -translate-x-1/2 w-[95vw] max-w-md"
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
       >
         {/* Action Buttons - Positioned above the card's header, aligned to the right of the card */}
         <div className="absolute bottom-[calc(100%+8px)] flex flex-col items-end gap-2 pointer-events-auto z-40 right-0 w-full pr-1">
-          {onRecenter && (
+          {onRecenter && !isVirtualMode && (
             <motion.button
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -102,7 +105,11 @@ const StepCard = ({
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: onRecenter ? 0.3 : 0.2, duration: 0.3 }} // Delay slightly more if recenter is present
             className="h-10 px-4 rounded-full bg-blue-500 hover:bg-blue-600 text-white font-semibold text-sm shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
-            onClick={toggleVirtualMode}
+            onClick={() => {
+              setIsCardExpanded(true);
+              setIsImageSectionExpanded(false); // Reset image section when toggling card
+              toggleVirtualMode();
+            }}
             title={isVirtualMode ? "Exit Virtual Mode" : "Enter Virtual Mode"}
           >
             <FaStreetView size={18} />

@@ -47,16 +47,30 @@ function createMarkerElement(isActive) {
   el.style.cursor = "pointer";
   el.innerHTML = `
     <div style="position: relative;">
-      <svg width="100%" height="100%" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g filter="drop-shadow(0 2px 6px rgba(0,0,0,0.2))">
-          <path d="M16 0C8.268 0 2 6.268 2 14.001c0 7.732 12.07 24.13 13.01 25.39a2 2 0 0 0 3.98 0C17.93 38.13 30 21.733 30 14.001 30 6.268 23.732 0 16 0z"
+      <svg width="100%" height="100%" viewBox="0 0 24 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <g filter="url(#pin-shadow)">
+          <path d="M12 0C5.364 0 0 5.364 0 12c0 7.732 10.768 22.464 11.234 23.088a1 1 0 0 0 1.532 0C13.232 34.464 24 19.732 24 12 24 5.364 18.636 0 12 0z"
             fill="${isActive ? markerColors.active : markerColors.inactive}"
-            stroke="#fff" stroke-width="2"/>
-          <circle cx="16" cy="14" r="6" fill="#fff"/>
-          <circle cx="16" cy="14" r="4" fill="${
-            isActive ? markerColors.active : markerColors.inactive
-          }"/>
+          />
+          <path d="M12 1C5.916 1 1 5.916 1 12c0 7.168 10.232 21.468 10.678 22.056a0.5 0.5 0 0 0 0.644 0C12.768 33.468 23 19.168 23 12c0-6.084-4.916-11-11-11z"
+            fill="${isActive ? markerColors.active : markerColors.inactive}"
+            stroke="#ffffff"
+            stroke-width="2"
+          />
+          <circle cx="12" cy="12" r="4.5" fill="#ffffff"/>
+          <circle cx="12" cy="12" r="3" fill="${isActive ? markerColors.active : markerColors.inactive}"/>
         </g>
+        <defs>
+          <filter id="pin-shadow" x="-4" y="-2" width="32" height="44" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+            <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+            <feColorMatrix in="SourceAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
+            <feOffset dy="2"/>
+            <feGaussianBlur stdDeviation="2"/>
+            <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+            <feBlend in2="BackgroundImageFix" result="effect1_dropShadow"/>
+            <feBlend in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+          </filter>
+        </defs>
       </svg>
     </div>
   `;
@@ -298,65 +312,71 @@ const MapWithTour = () => {
         popupRef.current
           .setLngLat(step.coordinate)
           .setHTML(
-            `<div id="popup-content-${idx}" style="display: flex; align-items: center; gap: 0.5rem;">
-              <span style="
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: ${isActive ? "2.1em" : "1.7em"};
-                height: ${isActive ? "2.1em" : "1.7em"};
-                color: #fff;
-                font-weight: 700;
-                font-size: 1rem;
-                border-radius: 20%;
-                box-shadow: 0 2px 8px 0 rgba(0,0,0,0.18);
-                transform: scale(${isActive ? "1.13" : "1"});
-                transition: all 0.18s cubic-bezier(.4,0,.2,1);
-              ">${idx + 1}</span>
-              <span class="tour-popup-title${
-                isActive ? " text-cyan-400" : ""
-              }" style="
-                color: ${isActive ? "#67e8f9" : "#fff"};
-                font-size: 1em;
-                font-weight: 700;
-                letter-spacing: 0.02em;
-                text-shadow: 0 1px 2px rgba(0,0,0,0.18);">
-                ${step.name || `Spot ${idx + 1}`}
-              </span>
-            </div>`
+        `<div id="popup-content-${idx}" style="display: flex; align-items: center; gap: 0.25rem;">
+          <span style="
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: ${isActive ? "1.8em" : "1.5em"};
+            height: ${isActive ? "1.8em" : "1.5em"};
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border-radius: 20%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            transform: scale(${isActive ? "1.1" : "1"});
+            transition: all 0.2s cubic-bezier(.4,0,.2,1);
+          ">${idx + 1}</span>
+          <span class="tour-popup-title${
+            isActive ? " text-cyan-400" : ""
+          }" style="
+            color: ${isActive ? "#67e8f9" : "#fff"};
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.15);">
+            ${step.name || `Spot ${idx + 1}`}
+          </span>
+        </div>`
           )
+          .setOffset([0, isActive ? -45 : -35]) // Increased offset for active markers
           .addTo(mapRef.current);
+        
         setTimeout(() => {
           document.querySelectorAll(".mapboxgl-popup").forEach((popup) => {
-            // Bring popup above marker
-            popup.style.zIndex = isActive ? "1002" : "1001";
+        popup.style.zIndex = isActive ? "1002" : "1001";
           });
+          
           document.querySelectorAll(".mapboxgl-popup-content").forEach((el) => {
-            el.style.background = "rgba(17,24,39,0.95)";
-            el.style.color = "#fff";
-            el.style.borderRadius = "1rem";
-            el.style.boxShadow = "0 4px 24px 0 rgba(0,0,0,0.25)";
-            el.style.padding = isActive ? "0.7rem 1.5rem" : "0.5rem 1.2rem";
-            el.style.fontFamily = "'DM Sans', sans-serif";
-            el.style.fontSize = "0.95rem";
-            el.style.fontWeight = "500";
-            el.style.minWidth = "110px";
-            el.style.textAlign = "center";
-            el.style.border = "none";
-            el.style.display = "inline-block";
-            if (isActive) {
-              el.style.overflow = "visible";
-              el.style.position = "relative";
-              el.style.zIndex = "1002";
-              el.style.animation = "popupScaleIn 0.32s cubic-bezier(.4,0,.2,1)";
-            }
+        el.style.background = "#0e0e0e";
+        el.style.color = "#fff";
+        el.style.borderRadius = "0.75rem";
+        el.style.boxShadow = "0 4px 16px rgba(0,0,0,0.2)";
+        el.style.padding = isActive ? "0.5rem 1rem" : "0.4rem 0.75rem";
+        el.style.fontFamily = "'DM Sans', sans-serif";
+        el.style.fontSize = "0.875rem";
+        el.style.fontWeight = "500";
+        el.style.minWidth = "90px";
+        el.style.textAlign = "center";
+        el.style.border = "1px solid #444444";
+        el.style.display = "inline-block";
+        
+        if (isActive) {
+          el.style.overflow = "visible";
+          el.style.position = "relative";
+          el.style.zIndex = "1002";
+          el.style.animation = "popupScaleIn 0.3s cubic-bezier(.4,0,.2,1)";
+        }
           });
-          // Add keyframes for popup scale animation if not present
+
           if (!document.getElementById("popup-scale-keyframes")) {
-            const style = document.createElement("style");
-            style.id = "popup-scale-keyframes";
-            style.innerHTML = `@keyframes popupScaleIn { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }`;
-            document.head.appendChild(style);
+        const style = document.createElement("style");
+        style.id = "popup-scale-keyframes";
+        style.innerHTML = `@keyframes popupScaleIn { 
+          0% { transform: scale(0.8); opacity: 0; } 
+          100% { transform: scale(1); opacity: 1; }
+        }`;
+        document.head.appendChild(style);
           }
         }, 0);
       };
