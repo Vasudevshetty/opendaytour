@@ -94,6 +94,23 @@ const MapWithTour = () => {
   const [legs, setLegs] = useState([]);
   const steps = tourSteps;
 
+  // Helper function to calculate adjusted map center for flyTo, considering a bottom card
+  const getAdjustedCenter = (map, targetCoord) => {
+    if (!map || !targetCoord || !map.project) return targetCoord; // Safety checks
+
+    const original = map.project(targetCoord);
+    if (!original) return targetCoord; // Projection failed
+
+    let cardHeight = 320; // Default card height in pixels
+
+    // Offset to push the point of interest upwards on the screen, effectively centering it above the card
+    const verticalOffset = cardHeight / 2;
+
+    // MODIFIED: Subtract verticalOffset to move the center upwards
+    const adjustedScreenY = original.y + verticalOffset;
+    return map.unproject([original.x, adjustedScreenY]);
+  };
+
   // --- BEGIN MODIFICATION ---
   // Ref to store the timestamp of the last user location state update
   const lastLocationUpdateTimeRef = useRef(Date.now());
@@ -112,11 +129,10 @@ const MapWithTour = () => {
       setGeofencedStepIndex(null); // Clear geofence state
       setShowGeofenceNotification(false);
       setShowGeofenceFallback(false);
-      setIsLoading(false); // Ensure loader is hidden if switching to virtual mode while loading
+      setIsLoading(false); // Ensure loader is hidden if switching to virtual mode
       return; // Don't start watching
     }
-    // Reset isLoading to true only if we are NOT in virtual mode and attempting to get location
-    setIsLoading(true);
+
     if (navigator.geolocation) {
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
@@ -127,17 +143,18 @@ const MapWithTour = () => {
           ) {
             setUserLocation([pos.coords.longitude, pos.coords.latitude]);
             lastLocationUpdateTimeRef.current = now;
-            setIsLoading(false); // Location acquired, hide loader
+            // setIsLoading(false) is NOT called here.
+            // It's handled by effects that center the map on userLocation.
           }
         },
         (error) => {
           console.error("Error watching position:", error);
           setIsLoading(false); // Error, hide loader, allow virtual tour
-          // Optionally, prompt for virtual tour if location fails
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
+      console.error("Geolocation is not supported by this browser.");
       setIsLoading(false); // Geolocation not supported, hide loader, allow virtual tour
     }
 
@@ -146,7 +163,7 @@ const MapWithTour = () => {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
-  }, [isVirtualMode, locationUpdateInterval]); // Added isVirtualMode
+  }, [isVirtualMode, locationUpdateInterval]); // Removed initialUserLocationCentered
 
   // Geofencing logic
   useEffect(() => {
@@ -219,14 +236,50 @@ const MapWithTour = () => {
       mapRef.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/streets-v11",
-        center: steps[0].coordinate,
-        zoom: 18,
+        center: steps[0].coordinate, // Initial fallback center
+        zoom: 15, // General initial zoom, will be overridden by flyTo
       });
-      // Set loader to false once map is initialized, if not already done by location services
+
       mapRef.current.on("load", () => {
-        if (!isVirtualMode && !userLocation) {
-          // If still waiting for location after map load, keep loader
+        if (!isVirtualMode) {
+          if (userLocation) {
+            // User location is available when map loads
+            const map = mapRef.current;
+            // MODIFIED: Use userLocation directly in normal mode
+            map.flyTo({
+              center: userLocation,
+              zoom: 18.5,
+              pitch: 50,
+              bearing: map.getBearing(), // Use current bearing for smooth transition
+              speed: 1.0,
+              curve: 1.0,
+              essential: true,
+            });
+            setIsLoading(false);
+          } else {
+            // User location not yet available. Map shows steps[0].
+            // isLoading is likely true from location useEffect.
+            // The dedicated useEffect below will handle centering when userLocation arrives.
+          }
         } else {
+          // Virtual mode (either initial state or toggled before map load)
+          if (steps[currentStep]) {
+            // currentStep should be 0 if initial
+            const map = mapRef.current;
+            const adjustedCenter = getAdjustedCenter(
+              map,
+              steps[currentStep].coordinate
+            );
+            map.flyTo({
+              center: adjustedCenter,
+              zoom: 17.5,
+              pitch: 50,
+              bearing: 270, // Consistent with virtual mode toggle bearing
+              speed: 0.9,
+              curve: 1.3,
+              essential: true,
+            });
+          }
           setIsLoading(false);
         }
       });
@@ -333,6 +386,29 @@ const MapWithTour = () => {
     };
   }, [steps, currentStep, legs, isLoading, isVirtualMode, userLocation]); // MODIFIED: Added userLocation
 
+  // useEffect to center on user location when it first becomes available *after* map load
+  useEffect(() => {
+    if (
+      mapRef.current &&
+      typeof mapRef.current.isStyleLoaded === "function" &&
+      mapRef.current.isStyleLoaded() &&
+      !isVirtualMode &&
+      userLocation
+    ) {
+      const map = mapRef.current;
+      map.flyTo({
+        center: userLocation,
+        zoom: 18.5,
+        pitch: 50,
+        bearing: map.getBearing(), // Use current bearing for smooth transition
+        speed: 1.0,
+        curve: 1.0,
+        essential: true,
+      });
+      setIsLoading(false); // Ensure loader is off
+    }
+  }, [userLocation, isVirtualMode]); // mapRef.current is implicitly a dependency via its usage
+
   // useEffect for user location marker and popup
   useEffect(() => {
     if (isVirtualMode) {
@@ -421,12 +497,17 @@ const MapWithTour = () => {
     }
     // This effect should only run if NOT in virtual mode.
     const map = mapRef.current;
+    // MODIFIED: Use userLocation directly in normal mode
     map.flyTo({
-      center: userLocation,
-      zoom: 18,
+      center: userLocation, // MODIFIED: Use userLocation directly
+      zoom: 18.5,
+      pitch: 50,
+      bearing: map.getBearing(),
+      speed: 1.0,
+      curve: 1.0,
       essential: true,
     });
-  }, [userLocation, geofencedStepIndex, steps, isVirtualMode]); // MODIFIED: Added isVirtualMode
+  }, [userLocation, geofencedStepIndex, steps, isVirtualMode]);
 
   useEffect(() => {
     async function fetchRoute() {
@@ -476,9 +557,7 @@ const MapWithTour = () => {
 
   // When currentStep changes, fly to the step's coordinate IF NOT actively geofenced and following user.
   useEffect(() => {
-    // MODIFIED: Conditional execution and updated dependencies
     if (!isVirtualMode && geofencedStepIndex !== null && userLocation) {
-      // If user is geofenced and location is known (not in virtual mode), user-following effect will take over.
       return;
     }
 
@@ -486,32 +565,18 @@ const MapWithTour = () => {
       const map = mapRef.current;
       const centerCoord = steps[currentStep].coordinate;
 
-      // Calculate offset to center the marker, considering the StepCard
-      const original = map.project(centerCoord);
-      const isMobile = window.innerWidth <= 640;
-      // Attempt to query the StepCard element.
-      // Note: This might be fragile if the card's selector/class changes.
-      // It's assumed the StepCard is rendered and has a consistent height or can be queried.
-      let cardHeight = 0;
-      const stepCardElement = document.querySelector(".fixed.bottom-0"); // A common selector for a bottom card
-      if (stepCardElement) {
-        cardHeight = stepCardElement.offsetHeight;
-      } else {
-        // Fallback or default height if the card isn't found or for non-mobile
-        // This value might need adjustment based on your StepCard's actual height
-        cardHeight = isMobile ? 200 : 140; // Example fallback heights
-      }
-
-      const offsetY = isMobile ? cardHeight / 2 : 0; // Only apply vertical offset on mobile
-      const newCenter = map.unproject([original.x, original.y - offsetY]);
+      // MODIFIED: Conditionally use getAdjustedCenter
+      const newCenter = isVirtualMode
+        ? getAdjustedCenter(map, centerCoord)
+        : centerCoord;
 
       map.flyTo({
-        center: newCenter, // Use the adjusted center
+        center: newCenter,
         zoom: 17.5,
-        pitch: 45, // Adjusted from previous 0 to match user's preference
+        pitch: 50,
         bearing: 270,
-        speed: 0.7,
-        curve: 2,
+        speed: 0.9,
+        curve: 1.3,
         essential: true,
       });
     }
@@ -575,12 +640,12 @@ const MapWithTour = () => {
           targetNameForLog = `Geofenced Spot: ${steps[geofencedStepIndex].name}`;
         } else if (steps[currentStep]) {
           centerCoord = steps[currentStep].coordinate;
-          // Corrected: Ensure targetNameForLog is assigned here as well
           targetNameForLog = `Current Tour Step: ${steps[currentStep].name}`;
         } else {
           console.warn(
             "handleRecenter: No target coordinate could be determined."
           );
+          // Added return to prevent further execution if no target.
           return;
         }
       }
@@ -597,37 +662,33 @@ const MapWithTour = () => {
         return;
       }
 
-      // Ensure targetNameForLog is used or remove if not needed for final deployment
       console.log(`handleRecenter: Targeting ${targetNameForLog}`, centerCoord);
 
-      const original = map.project(centerCoord);
+      // MODIFIED: Conditionally use getAdjustedCenter
+      const newCenter = isVirtualMode
+        ? getAdjustedCenter(map, centerCoord)
+        : centerCoord;
 
-      if (!original) {
+      if (
+        !newCenter ||
+        (newCenter[0] === centerCoord[0] &&
+          newCenter[1] === centerCoord[1] &&
+          map.project(centerCoord) === null)
+      ) {
+        // Check if projection failed inside helper or if newCenter is same as old and projection failed
         console.warn(
-          "handleRecenter: map.project(centerCoord) failed. Map may not be ready or coordinate is invalid."
+          "handleRecenter: map.project(centerCoord) failed or getAdjustedCenter returned original due to error. Map may not be ready or coordinate is invalid."
         );
         return;
       }
 
-      const isMobile = window.innerWidth <= 640;
-      let cardHeight = 0;
-      const stepCardElement = document.querySelector(".fixed.bottom-0");
-      if (stepCardElement) {
-        cardHeight = stepCardElement.offsetHeight;
-      } else {
-        cardHeight = isMobile ? 200 : 140; // Fallback heights
-      }
-
-      const offsetY = isMobile ? cardHeight / 2 : 0;
-      const newCenter = map.unproject([original.x, original.y - offsetY]);
-
       map.flyTo({
-        center: newCenter,
-        zoom: isVirtualMode || !userLocation ? 17.5 : 18.5, // Adjust zoom for virtual mode
-        pitch: 45,
-        bearing: 270,
+        center: newCenter, // MODIFIED: Use adjusted center
+        zoom: isVirtualMode || !userLocation ? 17.5 : 18.5,
+        pitch: 50,
+        bearing: map.getBearing(),
         speed: 0.9,
-        curve: 1.42,
+        curve: 1.3,
         essential: true,
       });
     }
@@ -642,32 +703,39 @@ const MapWithTour = () => {
       );
       setTimeout(() => setVirtualModeNotification(null), 2500);
       if (newMode) {
-        // Entering virtual mode
         setCurrentStep(0);
         setGeofencedStepIndex(null);
         setShowGeofenceNotification(false);
         setShowGeofenceFallback(false);
-        setUserLocation(null); // Clear real user location for virtual tour
-        setIsLoading(false); // Ensure loader is off for virtual tour
+        setUserLocation(null);
+        setIsLoading(false);
         if (mapRef.current && steps.length > 0) {
-          // Fly to first step in virtual mode
           const map = mapRef.current;
           const centerCoord = steps[0].coordinate;
-          const original = map.project(centerCoord);
-          if (original) {
-            const isMobile = window.innerWidth <= 640;
-            let cardHeight = 0;
-            const stepCardElement = document.querySelector(".fixed.bottom-0");
-            if (stepCardElement) cardHeight = stepCardElement.offsetHeight;
-            else cardHeight = isMobile ? 200 : 140;
-            const offsetY = isMobile ? cardHeight / 2 : 0;
-            const newCenter = map.unproject([original.x, original.y - offsetY]);
+
+          const newCenter = getAdjustedCenter(map, centerCoord); // MODIFIED: Use helper
+
+          if (
+            newCenter &&
+            !(
+              newCenter[0] === centerCoord[0] &&
+              newCenter[1] === centerCoord[1] &&
+              map.project(centerCoord) === null
+            )
+          ) {
             map.flyTo({
-              center: newCenter,
+              center: newCenter, // MODIFIED: Use adjusted center
               zoom: 17.5,
-              pitch: 45,
-              bearing: 90,
+              pitch: 50, // Cinematic pitch
+              bearing: 90, // Kept existing bearing
+              speed: 0.9, // Cinematic speed
+              curve: 1.3, // Cinematic curve
+              essential: true,
             });
+          } else {
+            console.warn(
+              "toggleVirtualMode: Failed to get adjusted center for initial flight."
+            );
           }
         }
       } else {
@@ -793,8 +861,8 @@ const MapWithTour = () => {
       `}</style>
       <StepCard
         step={steps[currentStep]}
-        onPrev={handlePrev}
-        onNext={handleNext}
+        onPrev={isVirtualMode ? handlePrev : null}
+        onNext={isVirtualMode ? handleNext : null}
         isFirst={currentStep === 0}
         isLast={currentStep === steps.length - 1}
         steps={steps}

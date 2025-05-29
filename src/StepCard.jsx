@@ -71,7 +71,7 @@ const StepCard = ({
             animate={{ y: 0, opacity: 1, scale: 1, filter: "blur(0)" }}
             exit={{ y: 150, opacity: 0, scale: 0.7, filter: "blur(10px)" }}
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-            className="fixed bottom-2 left-1/2 right-auto z-30 pointer-events-none font-dm-sans tracking-tight transform -translate-x-1/2 w-[95vw] max-w-md"
+            className="fixed bottom-2 left-1/2 right-auto z-30 pointer-events-none font-dm-sans tracking-tight transform -translate-x-1/2 w-[95vw] max-w-md min-h-60"
           >
             <div className="fixed left-1/2 -translate-x-1/2 bottom-[calc(100%+16px)] z-40 flex justify-center w-full pointer-events-none">
               <button
@@ -301,51 +301,24 @@ const StepCard = ({
               </div>
 
               {/* Navigation buttons */}
-              <div className="flex gap-2 p-6 pt-0">
-                <button
-                  className="flex-1 flex items-center justify-center gap-2 bg-gray-800 text-gray-200 px-4 py-2 rounded-full shadow hover:bg-gray-700 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-semibold"
-                  onClick={onPrev}
-                  disabled={isFirst || isFinalStep}
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+              {isVirtualMode && (
+                <div className="flex justify-between p-4 border-t border-gray-700">
+                  <button
+                    onClick={onPrev}
+                    disabled={isFirst}
+                    className="px-6 py-2.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                  Previous
-                </button>
-
-                <button
-                  className="flex-1 flex items-center justify-center gap-2 bg-green-500 text-white px-4 py-2 rounded-full shadow hover:bg-green-600 transition-all duration-200 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed text-sm font-semibold"
-                  onClick={onNext}
-                  disabled={isLast || isFinalStep}
-                >
-                  Next
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                    Previous
+                  </button>
+                  <button
+                    onClick={onNext}
+                    disabled={isLast}
+                    className="px-6 py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </button>
-              </div>
+                    {isFinalStep ? "Finish Tour" : "Next"}
+                  </button>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
