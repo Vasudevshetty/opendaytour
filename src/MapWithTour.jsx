@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { tourSteps } from "./data/tourSteps";
 import StepCard from "./StepCard";
 import Confetti from "./Confetti";
@@ -92,7 +92,7 @@ const MapWithTour = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [userLocation, setUserLocation] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [resetKey, setResetKey] = useState(0); // force remount for reset
+  const [hasShownConfetti, setHasShownConfetti] = useState(false);
   const [recenterKey, setRecenterKey] = useState(0); // for recentering
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -118,16 +118,22 @@ const MapWithTour = () => {
     }
   }, []);
 
-  // Show confetti on final step
+  // Show confetti only once when arriving at the last step
   useEffect(() => {
-    if (currentStep === tourSteps.length - 1) {
+    if (currentStep === steps.length - 1 && !hasShownConfetti) {
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 4000);
+      setHasShownConfetti(true);
+    } else if (currentStep < steps.length - 1 && hasShownConfetti) {
+      setHasShownConfetti(false);
+      setShowConfetti(false);
+    } else if (currentStep < steps.length - 1) {
+      setShowConfetti(false);
     }
-  }, [currentStep]);
+  }, [currentStep, steps.length, hasShownConfetti]);
 
   // Map and marker logic
   useEffect(() => {
+    // Only initialize the map once
     if (!mapRef.current) {
       mapRef.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -137,6 +143,7 @@ const MapWithTour = () => {
       });
     }
 
+    // Remove only markers, not the map itself
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = steps.map((step, idx) => {
       const el = createMarkerElement(idx === currentStep, idx + 1);
@@ -315,7 +322,7 @@ const MapWithTour = () => {
         userMarkerRef.current._userPopup.remove();
       }
     };
-  }, [steps, currentStep, userLocation, legs, recenterKey]);
+  }, [steps, currentStep, userLocation, legs]); // removed resetKey from deps
 
   useEffect(() => {
     async function fetchRoute() {
@@ -378,20 +385,22 @@ const MapWithTour = () => {
 
   const handlePrev = () => {
     if (currentStep > 0) {
+      setShowConfetti(false);
       setCurrentStep(currentStep - 1);
     }
   };
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
+      setShowConfetti(false);
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handleResetTour = () => {
-    setCurrentStep(0);
     setShowConfetti(false);
-    setResetKey((k) => k + 1); // force remount StepCard
+    setHasShownConfetti(false);
+    setCurrentStep(0);
   };
 
   const handleRecenter = () => {
@@ -400,18 +409,7 @@ const MapWithTour = () => {
 
   return (
     <div className="relative w-full h-screen">
-      <AnimatePresence>
-        {showConfetti && (
-          <Confetti onClose={() => setShowConfetti(false)}>
-            <div
-              ref={mapContainer}
-              className="w-full h-screen fixed top-0 left-0 z-0"
-              style={{ minHeight: "60vh" }}
-            />
-          </Confetti>
-        )}
-      </AnimatePresence>
-      {/* Map always rendered for overlay effect */}
+      {showConfetti && <Confetti onClose={() => setShowConfetti(false)} />}
       <div
         ref={mapContainer}
         className="w-full h-screen fixed top-0 left-0 z-10"
@@ -458,7 +456,6 @@ const MapWithTour = () => {
         .animate-fade-in { animation: fade-in 0.7s; }
       `}</style>
       <StepCard
-        key={resetKey}
         step={steps[currentStep]}
         onPrev={handlePrev}
         onNext={handleNext}
