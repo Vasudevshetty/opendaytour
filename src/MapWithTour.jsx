@@ -114,19 +114,86 @@ const MapWithTour = ({
 
       el.addEventListener("click", () => setCurrentStep(idx));
 
-      el.addEventListener("mouseenter", () => {
+      // Show popup on hover or if marker is active
+      const showPopup = () => {
+        const isActive = idx === currentStep;
         popupRef.current
           .setLngLat(step.coordinate)
           .setHTML(
-            `<div style="padding: 4px 10px; background: white; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); font-size: 0.85rem;">${
-              step.name || `Spot ${idx + 1}`
-            }</div>`
+            `<div id="popup-content-${idx}" style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: ${isActive ? "2.1em" : "1.7em"};
+                height: ${isActive ? "2.1em" : "1.7em"};
+                background: ${
+                  isActive ? markerColors.active : markerColors.inactive
+                };
+                color: #fff;
+                font-weight: 700;
+                font-size: 1.1em;
+                border-radius: 50%;
+                box-shadow: 0 2px 8px 0 rgba(0,0,0,0.18);
+                border: 2px solid #fff;
+                transform: scale(${isActive ? "1.13" : "1"});
+                transition: all 0.18s cubic-bezier(.4,0,.2,1);
+              ">${idx + 1}</span>
+              <span class="tour-popup-title${
+                isActive ? " text-cyan-400" : ""
+              }" style="
+                color: ${isActive ? "#67e8f9" : "#fff"};
+                font-size: 1em;
+                font-weight: 700;
+                letter-spacing: 0.02em;
+                text-shadow: 0 1px 2px rgba(0,0,0,0.18);">
+                ${step.name || `Spot ${idx + 1}`}
+              </span>
+            </div>`
           )
           .addTo(mapRef.current);
-      });
+        setTimeout(() => {
+          document.querySelectorAll(".mapboxgl-popup").forEach((popup) => {
+            // Bring popup above marker
+            popup.style.zIndex = isActive ? "1002" : "1001";
+          });
+          document.querySelectorAll(".mapboxgl-popup-content").forEach((el) => {
+            el.style.background = "rgba(17,24,39,0.95)";
+            el.style.color = "#fff";
+            el.style.borderRadius = "1rem";
+            el.style.boxShadow = "0 4px 24px 0 rgba(0,0,0,0.25)";
+            el.style.padding = isActive ? "0.7rem 1.5rem" : "0.5rem 1.2rem";
+            el.style.fontFamily = "'DM Sans', sans-serif";
+            el.style.fontSize = "0.95rem";
+            el.style.fontWeight = "500";
+            el.style.minWidth = "110px";
+            el.style.textAlign = "center";
+            el.style.border = "none";
+            el.style.display = "inline-block";
+            if (isActive) {
+              el.style.overflow = "visible";
+              el.style.position = "relative";
+              el.style.zIndex = "1002";
+              el.style.animation = "popupScaleIn 0.32s cubic-bezier(.4,0,.2,1)";
+            }
+          });
+          // Add keyframes for popup scale animation if not present
+          if (!document.getElementById("popup-scale-keyframes")) {
+            const style = document.createElement("style");
+            style.id = "popup-scale-keyframes";
+            style.innerHTML = `@keyframes popupScaleIn { 0% { transform: scale(0.7); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }`;
+            document.head.appendChild(style);
+          }
+        }, 0);
+      };
 
+      if (idx === currentStep) {
+        showPopup();
+      }
+
+      el.addEventListener("mouseenter", showPopup);
       el.addEventListener("mouseleave", () => {
-        popupRef.current.remove();
+        if (idx !== currentStep) popupRef.current.remove();
       });
 
       return new mapboxgl.Marker(el)
@@ -152,6 +219,37 @@ const MapWithTour = ({
       userMarkerRef.current = new mapboxgl.Marker(el)
         .setLngLat(userLocation)
         .addTo(mapRef.current);
+
+      // Add always-on popup for user location
+      const userPopup = new mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        offset: 30,
+      })
+        .setLngLat(userLocation)
+        .setHTML(
+          `<div><span class="tour-popup-title text-red-500">You are here</span></div>`
+        )
+        .addTo(mapRef.current);
+      // Directly style the user popup content
+      setTimeout(() => {
+        const popupContent = document.querySelectorAll(
+          ".mapboxgl-popup-content"
+        );
+        popupContent.forEach((el) => {
+          el.style.background = "rgba(17,24,39,0.95)";
+          el.style.color = "#fff";
+          el.style.borderRadius = "1rem";
+          el.style.boxShadow = "0 4px 24px 0 rgba(0,0,0,0.25)";
+          el.style.padding = "0.5rem 1.2rem";
+          el.style.fontFamily = "'DM Sans', sans-serif";
+          el.style.fontSize = "0.95rem";
+          el.style.fontWeight = "500";
+          el.style.minWidth = "90px";
+          el.style.textAlign = "center";
+          el.style.border = "none";
+        });
+      }, 0);
     }
 
     if (mapRef.current && steps[currentStep]) {
@@ -166,6 +264,9 @@ const MapWithTour = ({
     return () => {
       markersRef.current.forEach((m) => m.remove());
       if (userMarkerRef.current) userMarkerRef.current.remove();
+      if (userMarkerRef.current && userMarkerRef.current._userPopup) {
+        userMarkerRef.current._userPopup.remove();
+      }
     };
   }, [steps, currentStep, userLocation, setCurrentStep]);
 

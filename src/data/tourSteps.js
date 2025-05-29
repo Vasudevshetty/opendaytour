@@ -5,7 +5,7 @@ export const tourSteps = [
     shortDescription:
       "Tour starting point. Meet your guide and get an overview of the campus. Don't forget to grab your welcome kit!",
     images: ["/images/pot_circle.jpg"],
-    coordinate: [76.61409007196978, 12.313134346861508],
+    coordinate: [76.61504750584817, 12.313106196155177],
   },
   {
     name: "Pot Circle, Main Entrance",
