@@ -12,19 +12,34 @@ const markerColors = {
   user: "#EF4444", // red
 };
 
-// Helper to create a styled marker element
-function createMarkerElement(isActive) {
+// Helper to create a styled marker element as a pin with a number
+function createMarkerElement(isActive, number) {
   const el = document.createElement("div");
   el.className = isActive ? "marker marker-active" : "marker";
-  el.style.width = isActive ? "26px" : "20px";
-  el.style.height = isActive ? "26px" : "20px";
-  el.style.borderRadius = "50%";
-  el.style.background = isActive ? markerColors.active : markerColors.inactive;
-  el.style.border = isActive ? "4px solid #fff" : "2px solid #fff";
-  el.style.boxShadow = isActive
-    ? "0 0 10px 2px #2563EB88"
-    : "0 0 4px rgba(0,0,0,0.2)";
+  el.style.width = isActive ? "32px" : "26px";
+  el.style.height = isActive ? "40px" : "32px";
+  el.style.background = "none";
+  el.style.display = "flex";
+  el.style.alignItems = "center";
+  el.style.justifyContent = "center";
   el.style.cursor = "pointer";
+  el.innerHTML = `
+  <div className="relative">
+    <svg width="100%" height="100%" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <g filter="drop-shadow(0 2px 6px rgba(0,0,0,0.2))">
+        <path d="M16 0C8.268 0 2 6.268 2 14.001c0 7.732 12.07 24.13 13.01 25.39a2 2 0 0 0 3.98 0C17.93 38.13 30 21.733 30 14.001 30 6.268 23.732 0 16 0z" fill="${
+          isActive ? markerColors.active : markerColors.inactive
+        }" stroke="#fff" stroke-width="2"/>
+        <circle cx="16" cy="14" r="6" fill="#fff"/>
+        <circle cx="16" cy="14" r="4" fill="${
+          isActive ? markerColors.active : markerColors.inactive
+        }"/>
+      </g>
+    </svg>
+    <div style={{
+    }}>${number}</div>
+  </div>
+  `;
   if (isActive) {
     el.style.transform = "scale(1.1)";
     el.style.zIndex = "2";
@@ -93,7 +108,7 @@ const MapWithTour = ({
     // Markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = steps.map((step, idx) => {
-      const el = createMarkerElement(idx === currentStep);
+      const el = createMarkerElement(idx === currentStep, idx + 1);
       el.addEventListener("click", () => setCurrentStep(idx));
       const marker = new mapboxgl.Marker(el)
         .setLngLat(step.coordinate)
@@ -105,12 +120,18 @@ const MapWithTour = ({
       if (userMarkerRef.current) userMarkerRef.current.remove();
       const el = document.createElement("div");
       el.className = "marker-user";
-      el.style.width = "18px";
-      el.style.height = "18px";
-      el.style.borderRadius = "50%";
-      el.style.background = markerColors.user;
-      el.style.border = "2px solid #fff";
-      el.style.boxShadow = "0 0 6px 2px #EF4444AA";
+      el.style.width = "24px";
+      el.style.height = "32px";
+      el.style.background = "none";
+      el.innerHTML = `
+        <svg width="100%" height="100%" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g filter="drop-shadow(0 2px 6px rgba(0,0,0,0.2))">
+            <path d="M16 0C8.268 0 2 6.268 2 14.001c0 7.732 12.07 24.13 13.01 25.39a2 2 0 0 0 3.98 0C17.93 38.13 30 21.733 30 14.001 30 6.268 23.732 0 16 0z" fill="${markerColors.user}" stroke="#fff" stroke-width="2"/>
+            <circle cx="16" cy="14" r="6" fill="#fff"/>
+            <circle cx="16" cy="14" r="4" fill="${markerColors.user}"/>
+          </g>
+        </svg>
+      `;
       userMarkerRef.current = new mapboxgl.Marker(el)
         .setLngLat(userLocation)
         .addTo(mapRef.current);

@@ -1,5 +1,13 @@
 export const tourSteps = [
   {
+    name: "SJCE Entrance ",
+    description: "Start your tour at the iconic Pot Circle.",
+    shortDescription:
+      "Tour starting point. Meet your guide and get an overview of the campus. Don't forget to grab your welcome kit!",
+    images: ["/images/pot_circle.jpg"],
+    coordinate: [76.61409007196978, 12.313134346861508],
+  },
+  {
     name: "Pot Circle, Main Entrance",
     description: "Start your tour at the iconic Pot Circle.",
     shortDescription:
@@ -118,13 +126,5 @@ export const tourSteps = [
       "Information science block. Data science and analytics hub. Explore the latest in information technology.",
     images: ["/images/ise.jpg"],
     coordinate: [76.61413071161607, 12.316175757198367],
-  },
-  {
-    name: "JSS Center for Management Studies",
-    description: "Visit the JSS Center for Management Studies.",
-    shortDescription:
-      "Management studies center. Business and leadership programs. Meet faculty and current students for insights.",
-    images: ["/images/management.jpg"],
-    coordinate: [76.61434713133598, 12.317656509306447],
   },
 ];
