@@ -763,7 +763,7 @@ const MapWithTour = () => {
       {showConfetti && <Confetti onClose={() => setShowConfetti(false)} />}
       <div
         ref={mapContainer}
-        className="w-full sm:h-screen fixed top-0 left-0 z-10 h-[80vh]"
+        className="w-full h-screen fixed top-0 left-0 z-10"
         style={{
           minHeight: "60vh",
         }}
@@ -784,14 +784,8 @@ const MapWithTour = () => {
         onResetTour={handleResetTour}
         legs={legs}
         directions={directions}
+        toggleVirtualMode={toggleVirtualMode}
       />
-      <button
-        onClick={toggleVirtualMode} // MODIFIED: Use new handler
-        className="fixed bottom-[calc(var(--step-card-height,140px)+1rem)] sm:bottom-28 right-4 z-[1000] bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-full shadow-lg transition-colors duration-150 text-sm"
-        style={{ "--step-card-height": "140px" }} // Default, can be updated if card height is dynamic
-      >
-        {isVirtualMode ? "Exit Virtual Tour" : "Try Virtual Tour"}
-      </button>
     </div>
   );
 };
