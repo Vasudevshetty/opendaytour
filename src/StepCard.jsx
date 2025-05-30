@@ -37,9 +37,9 @@ const StepCard = ({
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false); // New state for hover
   const images =
-    // Array.isArray(step.images) && step.images.length > 0
-    //   ? step.images :
-    ["/campus/js1.jpg", "/campus/js2.jpg"]; // Placeholder if no images
+    Array.isArray(step.images) && step.images.length > 0
+      ? step.images
+      : ["/campus/js1.jpg", "/campus/js2.jpg"]; // Placeholder if no images
 
   // Effect for Escape key to collapse card
   useEffect(() => {
