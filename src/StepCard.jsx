@@ -55,7 +55,6 @@ const StepCard = ({
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isCardExpanded, setIsCardExpanded]);
-
   // Effect for auto-collapsing the card
   useEffect(() => {
     let timer;
@@ -63,7 +62,7 @@ const StepCard = ({
       timer = setTimeout(() => {
         setIsCardExpanded(false);
         setIsImageSectionExpanded(false); // Reset image section when collapsing
-      }, 3000); // Auto-collapse after 5 seconds
+      }, 4000); // Auto-collapse after 4 seconds
     }
     return () => {
       clearTimeout(timer);
