@@ -1011,16 +1011,19 @@ const MapWithTour = () => {
     <div className="relative w-full h-screen font-dm-sans">
       {/* Virtual Mode Notification */}
       {virtualModeNotification && (
-        <div className="fixed top-2 left-0 right-0 z-[1100] flex justify-center pointer-events-none">
+        <div className="fixed top-2   left-0 right-0 z-[1100] flex justify-center pointer-events-none">
           <motion.div
             initial={{ y: -40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -40, opacity: 0 }}
             transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className="backdrop-blur-md bg-[#0e0e0e]  rounded-full px-8 py-3 shadow-2xl text-white text-sm font-semibold pointer-events-auto"
+            className="backdrop-blur-md bg-[#0e0e0e]  rounded-full px-4 py-3 shadow-2xl text-white text-sm font-semibold pointer-events-auto"
           >
             <span className="flex items-center gap-2">
-              <FiMapPin className="text-white" size={16} />
+              <FiMapPin
+                className="text-white bg-blue-700 rounded-full p-1"
+                size={24}
+              />
               {virtualModeNotification}
             </span>
           </motion.div>
