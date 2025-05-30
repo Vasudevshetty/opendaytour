@@ -62,9 +62,9 @@ const Welcome = ({ onClose }) => {
                 Your adventure begins now
               </span>
               <span className="text-lg">🚩</span>
-            </div>
+            </div>{" "}
             <button
-              className="mt-4 px-6 py-2 bg-cyan-600 text-white rounded-full font-bold shadow hover:bg-cyan-800 transition-all duration-200 pointer-events-auto"
+              className="mt-4 px-6 py-2 bg-cyan-600 text-white rounded-full font-bold shadow hover:bg-cyan-800 transition-all duration-200 pointer-events-auto cursor-pointer"
               onClick={onClose}
             >
               Start Tour

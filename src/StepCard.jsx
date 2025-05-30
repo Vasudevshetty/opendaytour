@@ -88,12 +88,13 @@ const StepCard = ({
       >
         {/* Action Buttons - Positioned above the card's header, aligned to the right of the card */}
         <div className="absolute bottom-[calc(100%+8px)] flex flex-col items-end gap-2 pointer-events-auto z-40 right-0 w-full pr-1">
+          {" "}
           {onRecenter && !isVirtualMode && (
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.3 }}
-              className="w-11 h-11 flex items-center justify-center bg-black hover:bg-gray-800 text-red-500 rounded-full shadow-lg transition-all duration-200"
+              className="w-11 h-11 flex items-center justify-center bg-black hover:bg-gray-800 text-red-500 rounded-full shadow-lg transition-all duration-200 cursor-pointer"
               onClick={onRecenter}
               title="Recenter Map"
             >
@@ -116,12 +117,12 @@ const StepCard = ({
                 <line x1="18" y1="12" x2="22" y2="12" />
               </svg>
             </motion.button>
-          )}
+          )}{" "}
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: onRecenter ? 0.3 : 0.2, duration: 0.3 }} // Delay slightly more if recenter is present
-            className="h-10 px-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-800 hover:bg-blue-600 text-white font-semibold text-sm shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+            className="h-10 px-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-800 hover:bg-blue-600 text-white font-semibold text-sm shadow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
             onClick={() => {
               setIsCardExpanded(true);
               setIsImageSectionExpanded(false); // Reset image section when toggling card
@@ -150,7 +151,6 @@ const StepCard = ({
                 ) : null}
               </div>
             </div>
-
             {/* Middle: Step Name (Ellipsed & Clickable to expand/collapse) - Only if card is collapsed */}
             {!isCardExpanded && (
               <div
@@ -167,18 +167,17 @@ const StepCard = ({
             )}
             {/* Spacer if card is expanded and name moves down */}
             {isCardExpanded && <div className="flex-1 mx-2"></div>}
-
-            {/* Right: Action Buttons (Reset, Expand/Collapse) */}
+            {/* Right: Action Buttons (Reset, Expand/Collapse) */}{" "}
             <div className="flex items-center gap-1.5">
               <button
-                className="w-9 h-9 flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-gray-100 rounded-full transition-all duration-200"
+                className="w-9 h-9 flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-gray-100 rounded-full transition-all duration-200 cursor-pointer"
                 onClick={onResetTour}
                 title="Reset Tour"
               >
                 <FiRotateCcw size={18} />
               </button>
               <button
-                className="w-9 h-9 flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-gray-100 rounded-full transition-all duration-200"
+                className="w-9 h-9 flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-gray-100 rounded-full transition-all duration-200 cursor-pointer"
                 onClick={() => setIsCardExpanded((prev) => !prev)}
                 title={isCardExpanded ? "Collapse" : "Expand"}
               >
@@ -212,8 +211,7 @@ const StepCard = ({
                   </h2>
                   <p className="text-gray-300 mb-3 text-center text-xs leading-relaxed">
                     {step.description}
-                  </p>
-
+                  </p>{" "}
                   {images.length > 0 && (
                     <button
                       className="w-full py-2 cursor-pointer text-cyan-400 hover:text-cyan-300 text-sm transition-colors duration-200 flex items-center justify-center gap-2"
@@ -229,7 +227,6 @@ const StepCard = ({
                       )}
                     </button>
                   )}
-
                   <AnimatePresence initial={false}>
                     {isImageSectionExpanded && images.length > 0 && (
                       <motion.div
@@ -264,18 +261,18 @@ const StepCard = ({
                             alt={`Step image ${carouselIndex + 1}`}
                             className="rounded-xl w-full h-full object-cover shadow-lg"
                             style={{ transition: "opacity 0.3s" }}
-                          />
+                          />{" "}
                           {images.length > 1 && (
                             <>
                               <button
-                                className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full p-1.5 hover:bg-cyan-700 transition flex items-center justify-center"
+                                className="absolute left-1 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full p-1.5 hover:bg-cyan-700 transition flex items-center justify-center cursor-pointer"
                                 onClick={handlePrevImage}
                                 title="Previous Image"
                               >
                                 <FiChevronLeft size={18} />
                               </button>
                               <button
-                                className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full p-1.5 hover:bg-cyan-700 transition flex items-center justify-center"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 bg-black/60 text-white rounded-full p-1.5 hover:bg-cyan-700 transition flex items-center justify-center cursor-pointer"
                                 onClick={handleNextImage}
                                 title="Next Image"
                               >
@@ -300,13 +297,13 @@ const StepCard = ({
                     )}
                   </AnimatePresence>
                 </div>
-                {/* Navigation buttons - only if card is expanded AND in virtual mode */}
+                {/* Navigation buttons - only if card is expanded AND in virtual mode */}{" "}
                 {isVirtualMode && (
                   <div className="flex justify-between p-3 border-t border-gray-800 mt-1.5">
                     <button
                       onClick={onPrev}
                       disabled={isFirst}
-                      className="px-4 py-2 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+                      className="px-4 py-2 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2 cursor-pointer"
                     >
                       <FiArrowLeft size={18} />
                       <span>Previous</span>
@@ -314,7 +311,7 @@ const StepCard = ({
                     <button
                       onClick={onNext}
                       disabled={isLast}
-                      className="px-4 py-2 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+                      className="px-4 py-2 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2 cursor-pointer"
                     >
                       <span>{isFinalStep ? "Finish Tour" : "Next"}</span>
                       <FiArrowRight size={18} />

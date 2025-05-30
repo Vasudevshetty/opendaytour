@@ -263,9 +263,7 @@ const MapWithTour = () => {
             newGeofencedIndex = i;
           }
         }
-      }
-
-      if (newGeofencedIndex !== null) {
+      }      if (newGeofencedIndex !== null) {
         // User is in a geofence
         setShowGeofenceFallback(false); // Not showing fallback if geofenced
         if (geofencedStepIndex !== newGeofencedIndex) {
@@ -290,6 +288,7 @@ const MapWithTour = () => {
         setShowGeofenceFallback(true);
         setShowGeofenceNotification(false);
         // In free roam mode - don't update currentStep, let user explore freely
+        // Keep the map free for exploration without focusing on any step
       }
     } else {
       // No userLocation or no steps
@@ -806,13 +805,15 @@ const MapWithTour = () => {
     }
     if (mapRef.current && steps.length > 1) fetchRoute();
   }, [steps]);
-
-  // When currentStep changes, fly to the step's coordinate IF NOT actively geofenced and following user.
+  // When currentStep changes, fly to the step's coordinate ONLY in virtual mode or when geofenced
   useEffect(() => {
-    if (!isVirtualMode && geofencedStepIndex !== null && userLocation) {
+    // In real mode, only fly to step if user is geofenced (not in free roam)
+    if (!isVirtualMode && geofencedStepIndex === null && userLocation) {
+      // User is in free roam mode - don't auto-fly to any step
       return;
     }
 
+    // In virtual mode OR when geofenced, fly to the step
     if (mapRef.current && steps[currentStep]) {
       const map = mapRef.current;
       const centerCoord = steps[currentStep].coordinate;
@@ -1121,10 +1122,10 @@ const MapWithTour = () => {
                     {steps[geofencedStepIndex].name}
                   </span>
                 </p>
-              </div>
+              </div>{" "}
               <button
                 onClick={() => setShowGeofenceNotification(false)}
-                className="ml-4 hover:bg-[#1c1c1c] text-gray-400 rounded-full p-2 transition-colors duration-200"
+                className="ml-4 hover:bg-[#1c1c1c] text-gray-400 rounded-full p-2 transition-colors duration-200 cursor-pointer"
                 aria-label="Close notification"
               >
                 <FiX size={16} />
@@ -1149,10 +1150,10 @@ const MapWithTour = () => {
               <p className="text-gray-300 text-sm">
                 You&apos;ve wandered outside the tour area
               </p>
-            </div>
+            </div>{" "}
             <button
               onClick={() => setShowGeofenceFallback(false)}
-              className="ml-4 hover:bg-[#1c1c1c] text-gray-400 rounded-full p-2 transition-colors duration-200"
+              className="ml-4 hover:bg-[#1c1c1c] text-gray-400 rounded-full p-2 transition-colors duration-200 cursor-pointer"
               aria-label="Close notification"
             >
               <FiX size={16} />
