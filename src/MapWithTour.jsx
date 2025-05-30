@@ -86,6 +86,36 @@ function createMarkerElement(isActive) {
   return el;
 }
 
+// Helper function to create geofence circle data
+function createGeofenceCircle(center, radiusInMeters = 50, points = 64) {
+  const coords = [];
+  const earthRadius = 6371000; // Earth's radius in meters
+
+  for (let i = 0; i <= points; i++) {
+    const angle = (i * 360) / points;
+    const angleRad = (angle * Math.PI) / 180;
+
+    const latRad = (center[1] * Math.PI) / 180;
+    const deltaLat = (radiusInMeters / earthRadius) * Math.cos(angleRad);
+    const deltaLon =
+      (radiusInMeters / (earthRadius * Math.cos(latRad))) * Math.sin(angleRad);
+
+    const newLat = center[1] + (deltaLat * 180) / Math.PI;
+    const newLon = center[0] + (deltaLon * 180) / Math.PI;
+
+    coords.push([newLon, newLat]);
+  }
+
+  return {
+    type: "Feature",
+    geometry: {
+      type: "Polygon",
+      coordinates: [coords],
+    },
+    properties: {},
+  };
+}
+
 const MapWithTour = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [userLocation, setUserLocation] = useState(null);
@@ -226,8 +256,8 @@ const MapWithTour = () => {
 
       for (let i = 0; i < steps.length; i++) {
         const distance = haversineDistance(userLocation, steps[i].coordinate);
-        if (distance < 75) {
-          // MODIFIED: Geofence radius to 75m
+        if (distance < 50) {
+          // MODIFIED: Geofence radius to 50 
           if (distance < minDistance) {
             minDistance = distance;
             newGeofencedIndex = i;
@@ -434,7 +464,6 @@ const MapWithTour = () => {
       setIsLoading(false); // Ensure loader is off
     }
   }, [userLocation, isVirtualMode, mapRef, isLoading]); // Added isLoading to dependency array
-
   // useEffect for user location marker and popup
   useEffect(() => {
     if (isVirtualMode) {
@@ -510,6 +539,107 @@ const MapWithTour = () => {
       }
     };
   }, [userLocation, isVirtualMode]); // Added isVirtualMode
+
+  // useEffect for geofence visualization layer
+  useEffect(() => {
+    if (isVirtualMode || !mapRef.current || !userLocation) {
+      // Remove geofence layer in virtual mode or when no user location
+      if (mapRef.current && mapRef.current.getLayer("geofence-fill")) {
+        mapRef.current.removeLayer("geofence-fill");
+        mapRef.current.removeLayer("geofence-border");
+        mapRef.current.removeSource("geofence");
+      }
+      return;
+    }
+
+    const map = mapRef.current;
+
+    // Wait for map to be fully loaded
+    if (!map.isStyleLoaded()) {
+      return;
+    }
+
+    const geofenceData = createGeofenceCircle(userLocation, 50);
+
+    // Add or update geofence layer
+    if (map.getSource("geofence")) {
+      map.getSource("geofence").setData(geofenceData);
+    } else {
+      // Add geofence source
+      map.addSource("geofence", {
+        type: "geojson",
+        data: geofenceData,
+      });
+
+      // Add fill layer for the geofence area (cloudy blue effect)
+      map.addLayer({
+        id: "geofence-fill",
+        type: "fill",
+        source: "geofence",
+        paint: {
+          "fill-color": "#3B82F6", // Blue color
+          "fill-opacity": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            15,
+            0.15, // Low opacity at lower zoom
+            18,
+            0.25, // Higher opacity at higher zoom
+            20,
+            0.35, // Even higher opacity at very high zoom
+          ],
+        },
+      });
+
+      // Add border layer for the geofence area
+      map.addLayer({
+        id: "geofence-border",
+        type: "line",
+        source: "geofence",
+        paint: {
+          "line-color": "#2563EB", // Darker blue for border
+          "line-width": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            15,
+            1.5,
+            18,
+            2,
+            20,
+            2.5,
+          ],
+          "line-opacity": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            15,
+            0.6,
+            18,
+            0.8,
+            20,
+            1,
+          ],
+          "line-dasharray": [2, 2], // Dashed line for better visibility
+        },
+      });
+    }
+
+    return () => {
+      // Cleanup geofence layers when component unmounts
+      if (map && map.getLayer && map.getLayer("geofence-fill")) {
+        try {
+          map.removeLayer("geofence-fill");
+          map.removeLayer("geofence-border");
+          map.removeSource("geofence");
+        } catch (error) {
+          // Layer might already be removed
+          console.warn("Geofence layer cleanup error:", error);
+        }
+      }
+    };
+  }, [userLocation, isVirtualMode]);
 
   // NEW useEffect: Follow user's location when geofenced
   useEffect(() => {
