@@ -110,20 +110,22 @@ const StepCard = ({
               setIsImageSectionExpanded(false); // Reset image section when toggling card
               toggleVirtualMode();
             }}
-            title={isVirtualMode ? "Exit Virtual Mode" : "Enter Virtual Mode"}
+            title={isVirtualMode ? "Exit College Mode" : "Enter College Mode"}
           >
             <FaStreetView size={18} />
-            <span>{isVirtualMode ? "Exit 3D" : "Enter 3D"}</span>
+            <span>
+              {isVirtualMode ? "Exit College view" : "Enter College view"}
+            </span>
           </motion.button>
         </div>
 
         {/* The actual card content div */}
-        <div className="bg-[#0e0e0e] rounded-2xl w-full pointer-events-auto flex flex-col relative overflow-hidden shadow-2xl">
+        <div className="bg-[#0e0e0e] rounded-4xl w-full pointer-events-auto flex flex-col relative overflow-hidden shadow-2xl">
           {/* Header - Always visible */}
           <div className="flex items-center justify-between p-3 border-b border-gray-800">
             {/* Left: Spot Info */}
             <div className="flex items-center gap-1.5">
-              <div className="flex items-center gap-1 bg-[#1c1c1c] border border-[#444444] rounded-full px-2.5 py-1 text-gray-100 font-medium text-xs tracking-wide">
+              <div className="flex items-center gap-1 bg-[#1c1c1c] border border-[#444444] rounded-full px-3 py-1.5 text-gray-100 font-medium text-xs tracking-wide">
                 <FiMapPin className="mr-0.5 text-cyan-400" size={12} />
                 <span>Spot {hopNumber}</span>
                 {isCardExpanded && totalHops ? (
@@ -164,9 +166,9 @@ const StepCard = ({
                 title={isCardExpanded ? "Collapse" : "Expand"}
               >
                 {isCardExpanded ? (
-                  <FiChevronUp size={20} />
-                ) : (
                   <FiChevronDown size={20} />
+                ) : (
+                  <FiChevronUp size={20} />
                 )}
               </button>
             </div>
@@ -184,7 +186,7 @@ const StepCard = ({
             className="overflow-hidden" // Crucial for height animation
           >
             {isCardExpanded && (
-              <div className="px-4">
+              <div className="px-4 py-4">
                 {/* Step Name - Moved here for expanded view */}
                 <h2 className="text-xl font-bold mb-2 text-center text-gray-100 leading-tight">
                   {step.name}
@@ -286,7 +288,7 @@ const StepCard = ({
                 <button
                   onClick={onPrev}
                   disabled={isFirst}
-                  className="px-4 py-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+                  className="px-4 py-2 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
                 >
                   <FiArrowLeft size={18} />
                   <span>Previous</span>
@@ -294,7 +296,7 @@ const StepCard = ({
                 <button
                   onClick={onNext}
                   disabled={isLast}
-                  className="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+                  className="px-4 py-2 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
                 >
                   <span>{isFinalStep ? "Finish Tour" : "Next"}</span>
                   <FiArrowRight size={18} />
