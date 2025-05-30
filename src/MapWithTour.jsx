@@ -5,6 +5,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { tourSteps } from "./data/tour";
 import StepCard from "./StepCard";
 import Confetti from "./Confetti";
+import Welcome from "./Welcome";
 import { FiMapPin, FiX, FiAlertTriangle } from "react-icons/fi";
 
 mapboxgl.accessToken =
@@ -97,6 +98,8 @@ const MapWithTour = () => {
   const [isLoading, setIsLoading] = useState(true); // Added for loader
   const [isVirtualMode, setIsVirtualMode] = useState(false); // Added for virtual tour
   const [virtualModeNotification, setVirtualModeNotification] = useState(null);
+  const [isCardExpanded, setIsCardExpanded] = useState(false); // New state for card collapse/expand
+  const [showWelcome, setShowWelcome] = useState(true);
   const [progress, setProgress] = useState(0);
 
   const watchIdRef = useRef(null);
@@ -111,6 +114,26 @@ const MapWithTour = () => {
   const [directions, setDirections] = useState([]);
   const [legs, setLegs] = useState([]);
   const steps = tourSteps;
+
+  // Automatically close Welcome screen after a delay
+  useEffect(() => {
+    if (showWelcome) {
+      const timer = setTimeout(() => {
+        setShowWelcome(false);
+      }, 2500); // 2.5 seconds
+      return () => clearTimeout(timer); // Cleanup timer
+    }
+  }, [showWelcome]);
+
+  // Automatically close Confetti after a delay
+  useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 2500); // 2.5 seconds
+      return () => clearTimeout(timer); // Cleanup timer
+    }
+  }, [showConfetti]);
 
   // Helper function to calculate adjusted map center for flyTo, considering a bottom card
   const getAdjustedCenter = (map, targetCoord) => {
@@ -143,37 +166,42 @@ const MapWithTour = () => {
         navigator.geolocation.clearWatch(watchIdRef.current);
         watchIdRef.current = null;
       }
-      setUserLocation(null); // Clear real user location
-      setGeofencedStepIndex(null); // Clear geofence state
+      setUserLocation(null);
+      setGeofencedStepIndex(null);
       setShowGeofenceNotification(false);
       setShowGeofenceFallback(false);
-      setIsLoading(false); // Ensure loader is hidden if switching to virtual mode
-      return; // Don't start watching
+      setIsLoading(false); // Ensures loader is off & progress hits 100% via main effect
+      return;
     }
+
+    // For real mode, isLoading is true initially or set by toggleVirtualMode.
+    // The main isLoading effect will set progress to 0.
 
     if (navigator.geolocation) {
       watchIdRef.current = navigator.geolocation.watchPosition(
         (pos) => {
+          const { latitude, longitude } = pos.coords;
+          const newLocation = [longitude, latitude];
+
           const now = Date.now();
           if (
-            now - lastLocationUpdateTimeRef.current >=
+            now - lastLocationUpdateTimeRef.current >
             locationUpdateInterval
           ) {
-            setUserLocation([pos.coords.longitude, pos.coords.latitude]);
+            setUserLocation(newLocation);
             lastLocationUpdateTimeRef.current = now;
-            // setIsLoading(false) is NOT called here.
-            // It's handled by effects that center the map on userLocation.
+            // Progress for location acquired is handled in the useEffect that centers the map
           }
         },
         (error) => {
           console.error("Error watching position:", error);
-          setIsLoading(false); // Error, hide loader, allow virtual tour
+          setIsLoading(false); // Stop loading; progress to 100% via main effect
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     } else {
       console.error("Geolocation is not supported by this browser.");
-      setIsLoading(false); // Geolocation not supported, hide loader, allow virtual tour
+      setIsLoading(false); // Stop loading; progress to 100% via main effect
     }
 
     return () => {
@@ -198,8 +226,8 @@ const MapWithTour = () => {
 
       for (let i = 0; i < steps.length; i++) {
         const distance = haversineDistance(userLocation, steps[i].coordinate);
-        if (distance < 500) {
-          // MODIFIED: Geofence radius to 500m
+        if (distance < 75) {
+          // MODIFIED: Geofence radius to 75m
           if (distance < minDistance) {
             minDistance = distance;
             newGeofencedIndex = i;
@@ -217,6 +245,7 @@ const MapWithTour = () => {
         // MODIFIED: Update currentStep if user is geofenced to a new spot
         if (currentStep !== newGeofencedIndex) {
           setCurrentStep(newGeofencedIndex);
+          setIsCardExpanded(true); // Expand card when geofence changes current step
         }
       } else {
         // User is NOT in any geofence, but userLocation exists
@@ -251,6 +280,8 @@ const MapWithTour = () => {
   useEffect(() => {
     // Only initialize the map once
     if (!mapRef.current && mapContainer.current && steps.length > 0) {
+      if (isLoading) setProgress(10); // Starting map creation
+
       mapRef.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/streets-v11",
@@ -258,48 +289,18 @@ const MapWithTour = () => {
         zoom: 15, // General initial zoom, will be overridden by flyTo
       });
 
+      if (isLoading) setProgress(30); // Map object created
+
       mapRef.current.on("load", () => {
+        if (isLoading) setProgress(60); // Map resources loaded
+
         if (!isVirtualMode) {
-          if (userLocation) {
-            // User location is available when map loads
-            const map = mapRef.current;
-            // MODIFIED: Use userLocation directly in normal mode
-            map.flyTo({
-              center: userLocation,
-              zoom: 18.5,
-              pitch: 50,
-              bearing: map.getBearing(), // Use current bearing for smooth transition
-              speed: 1.0,
-              curve: 1.0,
-              essential: true,
-            });
-            setIsLoading(false);
-          } else {
-            // User location not yet available. Map shows steps[0].
-            // isLoading is likely true from location useEffect.
-            // The dedicated useEffect below will handle centering when userLocation arrives.
-          }
+          // Real mode: Wait for user location to finalize loading
         } else {
-          // Virtual mode (either initial state or toggled before map load)
-          if (steps[currentStep]) {
-            // currentStep should be 0 if initial
-            const map = mapRef.current;
-            const adjustedCenter = getAdjustedCenter(
-              map,
-              steps[currentStep].coordinate
-            );
-            map.flyTo({
-              center: adjustedCenter,
-              zoom: 17.5,
-              pitch: 50,
-              bearing: 270, // Consistent with virtual mode toggle bearing
-              speed: 0.9,
-              curve: 1.3,
-              essential: true,
-            });
-          }
+          // Virtual mode: Map loaded, can stop loading
           setIsLoading(false);
         }
+        // ... existing code from map.on('load') ...
       });
     }
 
@@ -429,9 +430,10 @@ const MapWithTour = () => {
         curve: 1.0,
         essential: true,
       });
+      if (isLoading) setProgress(90); // Location acquired & map ready for centering
       setIsLoading(false); // Ensure loader is off
     }
-  }, [userLocation, isVirtualMode]); // mapRef.current is implicitly a dependency via its usage
+  }, [userLocation, isVirtualMode, mapRef, isLoading]); // Added isLoading to dependency array
 
   // useEffect for user location marker and popup
   useEffect(() => {
@@ -726,18 +728,20 @@ const MapWithTour = () => {
         newMode ? "Entered College View" : "Exited College View"
       );
       if (prev) setTimeout(() => setVirtualModeNotification(null), 1500);
+
       if (newMode) {
+        // Entering Virtual Mode
         setCurrentStep(0);
         setGeofencedStepIndex(null);
         setShowGeofenceNotification(false);
         setShowGeofenceFallback(false);
         setUserLocation(null);
-        setIsLoading(false);
+        // setIsLoading(false); // Set loading to false for virtual mode. Main effect handles progress.
+
         if (mapRef.current && steps.length > 0) {
           const map = mapRef.current;
           const centerCoord = steps[0].coordinate;
-
-          const newCenter = getAdjustedCenter(map, centerCoord); // MODIFIED: Use helper
+          const newCenter = getAdjustedCenter(map, centerCoord);
 
           if (
             newCenter &&
@@ -762,34 +766,26 @@ const MapWithTour = () => {
             );
           }
         }
+        setIsLoading(false); // Ensure loading is false after setup for virtual mode.
       } else {
-        // Exiting virtual mode
+        // Exiting Virtual Mode
+        setIsLoading(true); // IMPORTANT: Set loading to true to show loader for real mode
         // Real location watch will restart due to useEffect dependency on isVirtualMode
-        // isLoading will be set to true by the location useEffect
+        // The main isLoading effect will set progress to 0.
       }
       return newMode;
     });
   };
 
-  // Animate progress bar while loading
+  // Manage progress bar based on actual loading state
   useEffect(() => {
-    if (!isLoading) {
+    if (isLoading) {
+      setProgress(0); // Reset to 0 when loading starts
+    } else {
+      // When loading is completely finished, ensure progress is 100%.
       setProgress(100);
-      return;
     }
-    setProgress(0);
-    let frame;
-    let value = 0;
-    const animate = () => {
-      if (!isLoading) return;
-      value += Math.random() * 2 + 0.5; // randomize for realism
-      if (value > 90) value = 90;
-      setProgress(value);
-      frame = requestAnimationFrame(animate);
-    };
-    frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
-  }, [isLoading]);
+  }, [isLoading]); // Only depends on isLoading
 
   return (
     <div className="relative w-full h-screen font-dm-sans">
@@ -814,10 +810,10 @@ const MapWithTour = () => {
       {/* Loading Screen */}
       {isLoading && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4 }}
+          initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+          animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
+          exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
           className="fixed inset-0 bg-[#0e0e0e] flex flex-col items-center justify-center z-[5000] pointer-events-auto"
         >
           {/* Enhanced Map Pin Animation */}
@@ -936,6 +932,7 @@ const MapWithTour = () => {
         </div>
       )}
 
+      {showWelcome && <Welcome onClose={() => setShowWelcome(false)} />}
       {showConfetti && <Confetti onClose={() => setShowConfetti(false)} />}
 
       <div
@@ -958,6 +955,8 @@ const MapWithTour = () => {
         directions={directions}
         toggleVirtualMode={toggleVirtualMode}
         isVirtualMode={isVirtualMode}
+        isCardExpanded={isCardExpanded}
+        setIsCardExpanded={setIsCardExpanded}
       />
     </div>
   );

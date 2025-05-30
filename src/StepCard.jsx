@@ -28,12 +28,13 @@ const StepCard = ({
   isFinalStep,
   toggleVirtualMode,
   isVirtualMode,
+  isCardExpanded,
+  setIsCardExpanded,
 }) => {
   const hopNumber =
     typeof currentStepIndex === "number" ? currentStepIndex + 1 : 1;
   const totalHops = Array.isArray(steps) ? steps.length : undefined;
   const [isImageSectionExpanded, setIsImageSectionExpanded] = useState(false); // Renamed from 'expanded'
-  const [isCardExpanded, setIsCardExpanded] = useState(false); // New state for card collapse/expand
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false); // New state for hover
   const images =
@@ -46,13 +47,14 @@ const StepCard = ({
     const handleKeyDown = (event) => {
       if (event.key === "Escape" && isCardExpanded) {
         setIsCardExpanded(false);
+        setIsImageSectionExpanded(false); // Reset image section when collapsing
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isCardExpanded]);
+  }, [isCardExpanded, setIsCardExpanded]);
 
   // Effect for auto-collapsing the card
   useEffect(() => {
@@ -60,12 +62,13 @@ const StepCard = ({
     if (isCardExpanded && !isHovering && !isVirtualMode) {
       timer = setTimeout(() => {
         setIsCardExpanded(false);
-      }, 5000); // Auto-collapse after 5 seconds
+        setIsImageSectionExpanded(false); // Reset image section when collapsing
+      }, 3000); // Auto-collapse after 5 seconds
     }
     return () => {
       clearTimeout(timer);
     };
-  }, [isCardExpanded, isHovering, isVirtualMode]);
+  }, [isCardExpanded, isHovering, isVirtualMode, setIsCardExpanded]);
 
   const handlePrevImage = (e) => {
     e.stopPropagation();
