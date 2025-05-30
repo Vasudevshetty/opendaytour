@@ -723,7 +723,7 @@ const MapWithTour = () => {
     setIsVirtualMode((prev) => {
       const newMode = !prev;
       setVirtualModeNotification(
-        newMode ? "Entered Virtual Mode" : "Exited Virtual Mode"
+        newMode ? "Entered College View" : "Exited College View"
       );
       if (prev) setTimeout(() => setVirtualModeNotification(null), 1500);
       if (newMode) {

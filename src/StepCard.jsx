@@ -110,11 +110,11 @@ const StepCard = ({
               setIsImageSectionExpanded(false); // Reset image section when toggling card
               toggleVirtualMode();
             }}
-            title={isVirtualMode ? "Exit College Mode" : "Enter College Mode"}
+            title={isVirtualMode ? "Exit College View " : "Explore College"}
           >
             <FaStreetView size={18} />
             <span>
-              {isVirtualMode ? "Exit College view" : "Enter College view"}
+              {isVirtualMode ? "Exit College View" : "Explore College"}
             </span>
           </motion.button>
         </div>
