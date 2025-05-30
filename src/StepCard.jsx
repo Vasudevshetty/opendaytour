@@ -121,8 +121,15 @@ const StepCard = ({
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: onRecenter ? 0.3 : 0.2, duration: 0.3 }} // Delay slightly more if recenter is present
-            className="h-10 px-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-800 hover:bg-blue-600 text-white font-semibold text-sm shadow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+            transition={{ delay: onRecenter ? 0.3 : 0.2, duration: 0.3 }}
+            className={`h-10 px-3 rounded-full font-medium text-xs  transition-all duration-200 flex items-center justify-center gap-2 tracking-tight cursor-pointer
+              ${
+                isVirtualMode
+                  ? "bg-[linear-gradient(to_right,#ed8936,#dd6b20)] text-white  transition-colors duration-300 ease-in-out"
+                  : "bg-[linear-gradient(to_right,#4299e1,#3182ce)] text-white  transition-colors duration-300 ease-in-out"
+              }
+
+            `}
             onClick={() => {
               setIsCardExpanded(true);
               setIsImageSectionExpanded(false); // Reset image section when toggling card
@@ -132,7 +139,13 @@ const StepCard = ({
           >
             <FaStreetView size={18} />
             <span>
-              {isVirtualMode ? "Exit College View" : "Explore College"}
+              {isVirtualMode ? (
+                <span className="font-medium tracking-tight">
+                  Exit College View
+                </span>
+              ) : (
+                "Explore College"
+              )}
             </span>
           </motion.button>
         </div>

@@ -1021,10 +1021,10 @@ const MapWithTour = () => {
             animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
             exit={{ y: -40, opacity: 0, filter: "blur(10px)" }}
             transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className={`pointer-events-auto flex items-center gap-3 px-5 py-3 rounded-full shadow-lg backdrop-blur-lg border text-sm font-medium
+            className={`pointer-events-auto flex items-center gap-3 px-4 py-2 rounded-full shadow-lg backdrop-blur-lg border text-sm font-medium
         ${
           isExitingNotification
-            ? "bg-red-900/95 text-red-200 border-red-500/30"
+            ? "bg-[#8c000099] text-white border-red-500/30"
             : "bg-[#1a1a1a]/90 text-white border-white/10"
         }
       `}
@@ -1032,7 +1032,7 @@ const MapWithTour = () => {
             <FiMapPin
               className={`rounded-full p-1.5 ${
                 isExitingNotification
-                  ? "text-red-200 bg-red-800/10"
+                  ? "text-red-200 bg-[#8c000099]/40"
                   : "text-blue-500 bg-blue-500/10"
               }`}
               size={24}
