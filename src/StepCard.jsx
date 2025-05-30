@@ -53,15 +53,14 @@ const StepCard = ({
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isCardExpanded, setIsCardExpanded]);
-  // Effect for auto-collapsing the card
+  }, [isCardExpanded, setIsCardExpanded]); // Effect for auto-collapsing the card
   useEffect(() => {
     let timer;
     if (isCardExpanded && !isHovering && !isVirtualMode) {
       timer = setTimeout(() => {
         setIsCardExpanded(false);
         setIsImageSectionExpanded(false); // Reset image section when collapsing
-      }, 4000); // Auto-collapse after 4 seconds
+      }, 3000); // Auto-collapse after 3 seconds
     }
     return () => {
       clearTimeout(timer);

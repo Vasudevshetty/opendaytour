@@ -142,6 +142,7 @@ const MapWithTour = () => {
   const popupRef = useRef(
     new mapboxgl.Popup({ closeButton: false, closeOnClick: false })
   );
+  const expandedStepsRef = useRef(new Set()); // Track which steps have already triggered expansion
   const [directions, setDirections] = useState([]);
   const [legs, setLegs] = useState([]);
   const steps = tourSteps;
@@ -241,7 +242,6 @@ const MapWithTour = () => {
       }
     };
   }, [isVirtualMode, locationUpdateInterval]); // Removed initialUserLocationCentered
-
   // Geofencing logic
   useEffect(() => {
     if (isVirtualMode) {
@@ -257,7 +257,7 @@ const MapWithTour = () => {
 
       for (let i = 0; i < steps.length; i++) {
         const distance = haversineDistance(userLocation, steps[i].coordinate);
-        if (distance < 5) {
+        if (distance < 50) {
           if (distance < minDistance) {
             minDistance = distance;
             newGeofencedIndex = i;
@@ -271,11 +271,16 @@ const MapWithTour = () => {
         if (geofencedStepIndex !== newGeofencedIndex) {
           setGeofencedStepIndex(newGeofencedIndex);
           setShowGeofenceNotification(true);
-        }
-        // MODIFIED: Update currentStep if user is geofenced to a new spot
-        if (currentStep !== newGeofencedIndex) {
-          setCurrentStep(newGeofencedIndex);
-          setIsCardExpanded(true); // Expand card when geofence changes current step
+
+          // Only update currentStep and expand card if this step hasn't been triggered before
+          if (!expandedStepsRef.current.has(newGeofencedIndex)) {
+            setCurrentStep(newGeofencedIndex);
+            setIsCardExpanded(true);
+            expandedStepsRef.current.add(newGeofencedIndex); // Mark this step as triggered
+          } else if (currentStep !== newGeofencedIndex) {
+            // If step already triggered before, just update currentStep without expanding
+            setCurrentStep(newGeofencedIndex);
+          }
         }
       } else {
         // User is NOT in any geofence, but userLocation exists
@@ -284,6 +289,7 @@ const MapWithTour = () => {
         }
         setShowGeofenceFallback(true);
         setShowGeofenceNotification(false);
+        // In free roam mode - don't update currentStep, let user explore freely
       }
     } else {
       // No userLocation or no steps
@@ -291,7 +297,7 @@ const MapWithTour = () => {
       setShowGeofenceFallback(false);
       setShowGeofenceNotification(false);
     }
-  }, [userLocation, steps, geofencedStepIndex, currentStep, isVirtualMode]); // MODIFIED: Added isVirtualMode
+  }, [userLocation, steps, geofencedStepIndex, currentStep, isVirtualMode]);
 
   // Show confetti only once when arriving at the last step
   useEffect(() => {
@@ -848,11 +854,11 @@ const MapWithTour = () => {
       setCurrentStep(currentStep + 1);
     }
   };
-
   const handleResetTour = () => {
     setShowConfetti(false);
     setHasShownConfetti(false);
     setCurrentStep(0);
+    expandedStepsRef.current.clear(); // Reset the expanded steps tracking
   };
 
   const handleRecenter = () => {

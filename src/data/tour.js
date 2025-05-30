@@ -23,7 +23,7 @@ export const tourSteps = [
     coordinate: [76.613826, 12.312986],
   },
   {
-    name: "Admission Desk",
+    name: "Admission Queries",
     description: "Get your admission queries answered here.",
     shortDescription:
       "Admission query desk. Staff available for all your admission and document queries. Assistance for new students provided here.",
@@ -40,7 +40,7 @@ export const tourSteps = [
     coordinate: [76.613154, 12.312955],
   },
   {
-    name: "Electrical and Electronics Department",
+    name: "Electrical and Electronics Engineering Department",
     description: "Explore the electrical and electronics department.",
     shortDescription:
       "Electrical & electronics labs. Discover circuit design and automation. Faculty available for Q&A.",
@@ -48,7 +48,7 @@ export const tourSteps = [
     coordinate: [76.612891, 12.313147],
   },
   {
-    name: "Mechanical Department",
+    name: "Mechanical Engineering Department",
     description: "Discover innovations in the mechanical department.",
     shortDescription:
       "Mechanical engineering zone. Explore robotics and machine design labs. Interactive displays for visitors.",
@@ -58,22 +58,14 @@ export const tourSteps = [
   {
     name: "Auditorium",
     description:
-      "Visit Physics, chemistry, Math and Biotechnology Departments here",
+      "Visit Physics, chemistry, Mathametics and Biotechnology Departments here",
     shortDescription:
       " Physics, chemistry, Math and Biotechnology Departments are here to present their department activities.",
     images: ["/images/auditorium.jpg"],
     coordinate: [76.612784, 12.314249],
   },
   {
-    name: "Civil Department",
-    description: "Learn about civil engineering.",
-    shortDescription:
-      "Civil engineering block. Learn about sustainable construction. View student models and ongoing research.",
-    images: ["/images/civil.jpg"],
-    coordinate: [76.613136, 12.314202],
-  },
-  {
-    name: "Construction and Technology Department",
+    name: "Construction Technology and Managment Department",
     description: "Learn about construction technology.",
     shortDescription:
       "Construction Technology. Learn about various new method and techniques used in construction. View student models and ongoing research.",
@@ -81,7 +73,15 @@ export const tourSteps = [
     coordinate: [76.612988, 12.31424],
   },
   {
-    name: "Environmental Department",
+    name: "Civil Engineering Department",
+    description: "Learn about civil engineering.",
+    shortDescription:
+      "Civil engineering block. Learn about sustainable construction. View student models and ongoing research.",
+    images: ["/images/civil.jpg"],
+    coordinate: [76.613136, 12.314202],
+  },
+  {
+    name: "Environmental Engineering Department",
     description: "Explore environmental studies and sustainability.",
     shortDescription:
       "Environmental research center. Explore green technologies and sustainability projects. Meet the research team.",
@@ -97,7 +97,7 @@ export const tourSteps = [
     coordinate: [76.613543, 12.314906],
   },
   {
-    name: "Polymer Science and Engineering Department",
+    name: "Polymer Science and Technology Department",
     description: "Discover advancements in polymer science.",
     shortDescription:
       "Polymer science block. Discover new materials and their applications. Lab tours available on request.",
@@ -110,7 +110,7 @@ export const tourSteps = [
     shortDescription:
       "Entrepreneurship centre. Support for student startups and innovation. Attend a workshop or mentoring session.",
     images: ["/images/step.jpg"],
-    coordinate: [76.613284, 12.315791],
+    coordinate: [76.613282, 12.31561],
   },
   {
     name: "Student Clubs",
@@ -118,17 +118,10 @@ export const tourSteps = [
     shortDescription:
       "Student Clubs, being the integral part of students life. Visit the various student club to know more .",
     images: ["/images/step.jpg"],
-    coordinate: [76.613518, 12.31591],
+    coordinate: [76.613432, 12.31623],
   },
   {
-    name: "Golden Jubilee Bhavan",
-    description: "Now you are entering the Golden Jubilee Bhavan.",
-    shortDescription: "Golden jubliee bhavan is were the universty resides .",
-    images: ["/images/step.jpg"],
-    coordinate: [76.613878, 12.316312],
-  },
-  {
-    name: "Master of Computer Application",
+    name: "Master of Computer Applications",
     description: "Visit the Master of Computer Application ",
     shortDescription:
       "Golden Jubilee Hall. Venue for special ceremonies and alumni meets. Explore the photo gallery inside.",
@@ -144,7 +137,7 @@ export const tourSteps = [
     coordinate: [76.614081, 12.316412],
   },
   {
-    name: "Placement and Training ",
+    name: "Placement and Training Cell",
     description: " visit the Placement and Training.",
     shortDescription:
       "In order to know the placement and training to know about the placement.",
@@ -160,7 +153,7 @@ export const tourSteps = [
     coordinate: [76.614055, 12.316261],
   },
   {
-    name: "Electronics and Instrumentation Engineering ",
+    name: "Electronics and Instrumentation Engineering Department ",
     description:
       "Visit the Electronics and Instrumentation Engineering department.",
     shortDescription:
@@ -169,7 +162,7 @@ export const tourSteps = [
     coordinate: [76.614061, 12.316249],
   },
   {
-    name: "Information Science and Engineering Department",
+    name: "Information Science and Engineering / CSBS Department",
     description: "Visit the Information Science and Engineering Department.",
     shortDescription:
       "Information science block. Data science and analytics hub. Explore the latest in information technology.",
@@ -177,7 +170,7 @@ export const tourSteps = [
     coordinate: [76.61417, 12.31627],
   },
   {
-    name: "Physical Education",
+    name: "Physical Education Department",
     description: "Visit the Physical Education Department.",
     shortDescription:
       "To know about the various activities related to physical fitness, health, and overall well-being ",
