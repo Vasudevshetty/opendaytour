@@ -131,6 +131,7 @@ const MapWithTour = () => {
   const [isCardExpanded, setIsCardExpanded] = useState(false); // New state for card collapse/expand
   const [showWelcome, setShowWelcome] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [geofenceVisible, setGeofenceVisible] = useState(false); // For geofence animation cycle
 
   const watchIdRef = useRef(null);
   const mapContainer = useRef(null);
@@ -257,7 +258,7 @@ const MapWithTour = () => {
       for (let i = 0; i < steps.length; i++) {
         const distance = haversineDistance(userLocation, steps[i].coordinate);
         if (distance < 50) {
-          // MODIFIED: Geofence radius to 50 
+          // MODIFIED: Geofence radius to 50
           if (distance < minDistance) {
             minDistance = distance;
             newGeofencedIndex = i;
@@ -539,15 +540,29 @@ const MapWithTour = () => {
       }
     };
   }, [userLocation, isVirtualMode]); // Added isVirtualMode
+  // useEffect for geofence visibility (always visible when user location exists)
+  useEffect(() => {
+    if (isVirtualMode || !userLocation) {
+      setGeofenceVisible(false);
+      return;
+    }
 
-  // useEffect for geofence visualization layer
+    // Always show geofence when user location is available
+    setGeofenceVisible(true);
+  }, [userLocation, isVirtualMode]); // useEffect for geofence visualization layer
   useEffect(() => {
     if (isVirtualMode || !mapRef.current || !userLocation) {
       // Remove geofence layer in virtual mode or when no user location
-      if (mapRef.current && mapRef.current.getLayer("geofence-fill")) {
+      if (
+        mapRef.current &&
+        mapRef.current.getLayer &&
+        mapRef.current.getLayer("geofence-fill")
+      ) {
         mapRef.current.removeLayer("geofence-fill");
         mapRef.current.removeLayer("geofence-border");
-        mapRef.current.removeSource("geofence");
+        mapRef.current.removeLayer("geofence-pulse");
+        mapRef.current.removeSource("geofence-small");
+        mapRef.current.removeSource("geofence-large");
       }
       return;
     }
@@ -559,44 +574,44 @@ const MapWithTour = () => {
       return;
     }
 
-    const geofenceData = createGeofenceCircle(userLocation, 50);
+    // Create multiple circles for scaling effect
+    const baseRadius = 50;
+    const smallRadius = baseRadius * 0.25; // 25% of base radius
+    const largeRadius = baseRadius * 1.0; // 100% of base radius
 
-    // Add or update geofence layer
-    if (map.getSource("geofence")) {
-      map.getSource("geofence").setData(geofenceData);
-    } else {
-      // Add geofence source
-      map.addSource("geofence", {
+    // Create geofence circles for animation
+    const createAnimatedGeofence = (radius) =>
+      createGeofenceCircle(userLocation, radius);
+
+    // Add or update geofence layers
+    if (!map.getSource("geofence-small")) {
+      // Add geofence sources for different scales
+      map.addSource("geofence-small", {
         type: "geojson",
-        data: geofenceData,
+        data: createAnimatedGeofence(smallRadius),
+      });
+
+      map.addSource("geofence-large", {
+        type: "geojson",
+        data: createAnimatedGeofence(largeRadius),
       });
 
       // Add fill layer for the geofence area (cloudy blue effect)
       map.addLayer({
         id: "geofence-fill",
         type: "fill",
-        source: "geofence",
+        source: "geofence-large",
         paint: {
           "fill-color": "#3B82F6", // Blue color
-          "fill-opacity": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            15,
-            0.15, // Low opacity at lower zoom
-            18,
-            0.25, // Higher opacity at higher zoom
-            20,
-            0.35, // Even higher opacity at very high zoom
-          ],
+          "fill-opacity": 0, // Start with 0, will be animated
         },
       });
 
-      // Add border layer for the geofence area
+      // Add pulsing border layer for the geofence area
       map.addLayer({
         id: "geofence-border",
         type: "line",
-        source: "geofence",
+        source: "geofence-large",
         paint: {
           "line-color": "#2563EB", // Darker blue for border
           "line-width": [
@@ -610,36 +625,112 @@ const MapWithTour = () => {
             20,
             2.5,
           ],
-          "line-opacity": [
+          "line-opacity": 0, // Start with 0, will be animated
+          "line-dasharray": [2, 2], // Dashed line for better visibility
+        },
+      });
+
+      // Add pulsing outer ring effect
+      map.addLayer({
+        id: "geofence-pulse",
+        type: "line",
+        source: "geofence-large",
+        paint: {
+          "line-color": "#60A5FA", // Lighter blue for pulse
+          "line-width": [
             "interpolate",
             ["linear"],
             ["zoom"],
             15,
-            0.6,
+            3,
             18,
-            0.8,
+            4,
             20,
-            1,
+            5,
           ],
-          "line-dasharray": [2, 2], // Dashed line for better visibility
+          "line-opacity": 0, // Start with 0, will be animated
+          "line-blur": 2,
         },
       });
+    } else {
+      // Update existing sources
+      map
+        .getSource("geofence-small")
+        .setData(createAnimatedGeofence(smallRadius));
+      map
+        .getSource("geofence-large")
+        .setData(createAnimatedGeofence(largeRadius));
+    }
+    let animationFrame;
+
+    // Simple continuous scaling animation - always visible when geofence is enabled
+    if (geofenceVisible) {
+      const animate = () => {
+        const time = Date.now() / 1000;
+
+        // Radius scaling animation (25% to 100% and back)
+        const scaleSpeed = 0.8; // Smooth scaling speed
+        const scalePhase = time * scaleSpeed;
+        const scaleProgress = (Math.sin(scalePhase) + 1) / 2; // 0 to 1
+
+        // Interpolate between small and large radius
+        const currentScale = 0.25 + 0.75 * scaleProgress; // 25% to 100%
+        const currentRadius = baseRadius * currentScale;
+
+        // Update geofence data with current radius
+        const currentGeofenceData = createAnimatedGeofence(currentRadius);
+        if (map.getSource("geofence-large")) {
+          map.getSource("geofence-large").setData(currentGeofenceData);
+        }
+
+        // Set fixed opacity based on zoom level (no pulsing)
+        const zoom = map.getZoom();
+        const fillOpacity = zoom > 17 ? 0.3 : zoom > 15 ? 0.25 : 0.2;
+        const borderOpacity = zoom > 17 ? 0.8 : zoom > 15 ? 0.7 : 0.6;
+        const pulseOpacity = zoom > 17 ? 0.6 : zoom > 15 ? 0.5 : 0.4;
+
+        // Apply opacity updates to layers
+        if (map.getLayer("geofence-fill")) {
+          map.setPaintProperty("geofence-fill", "fill-opacity", fillOpacity);
+        }
+        if (map.getLayer("geofence-border")) {
+          map.setPaintProperty(
+            "geofence-border",
+            "line-opacity",
+            borderOpacity
+          );
+        }
+        if (map.getLayer("geofence-pulse")) {
+          map.setPaintProperty("geofence-pulse", "line-opacity", pulseOpacity);
+        }
+
+        // Continue animation while geofence is visible
+        if (geofenceVisible) {
+          animationFrame = requestAnimationFrame(animate);
+        }
+      };
+
+      animationFrame = requestAnimationFrame(animate);
+    } else {
+      // Hide all layers immediately when geofence is not visible
+      if (map.getLayer("geofence-fill")) {
+        map.setPaintProperty("geofence-fill", "fill-opacity", 0);
+      }
+      if (map.getLayer("geofence-border")) {
+        map.setPaintProperty("geofence-border", "line-opacity", 0);
+      }
+      if (map.getLayer("geofence-pulse")) {
+        map.setPaintProperty("geofence-pulse", "line-opacity", 0);
+      }
     }
 
+    // Cleanup function to cancel animation frame
     return () => {
-      // Cleanup geofence layers when component unmounts
-      if (map && map.getLayer && map.getLayer("geofence-fill")) {
-        try {
-          map.removeLayer("geofence-fill");
-          map.removeLayer("geofence-border");
-          map.removeSource("geofence");
-        } catch (error) {
-          // Layer might already be removed
-          console.warn("Geofence layer cleanup error:", error);
-        }
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
       }
     };
-  }, [userLocation, isVirtualMode]);
+  }, [userLocation, geofenceVisible, isVirtualMode]);
 
   // NEW useEffect: Follow user's location when geofenced
   useEffect(() => {
@@ -940,7 +1031,7 @@ const MapWithTour = () => {
       {/* Loading Screen */}
       {isLoading && (
         <motion.div
-          initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+          initial={{ opacity: 1, backdropFilter: "blur(0px)" }}
           animate={{ opacity: 1, backdropFilter: "blur(8px)" }}
           exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
           transition={{ duration: 0.5, ease: "easeInOut" }}
