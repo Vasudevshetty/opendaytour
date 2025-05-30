@@ -132,6 +132,7 @@ const MapWithTour = () => {
   const [showWelcome, setShowWelcome] = useState(true);
   const [progress, setProgress] = useState(0);
   const [geofenceVisible, setGeofenceVisible] = useState(false); // For geofence animation cycle
+  const [isExitingNotification, setIsExitingNotification] = useState(false);
 
   const watchIdRef = useRef(null);
   const mapContainer = useRef(null);
@@ -263,7 +264,8 @@ const MapWithTour = () => {
             newGeofencedIndex = i;
           }
         }
-      }      if (newGeofencedIndex !== null) {
+      }
+      if (newGeofencedIndex !== null) {
         // User is in a geofence
         setShowGeofenceFallback(false); // Not showing fallback if geofenced
         if (geofencedStepIndex !== newGeofencedIndex) {
@@ -943,7 +945,13 @@ const MapWithTour = () => {
       setVirtualModeNotification(
         newMode ? "Entered College View" : "Exited College View"
       );
-      if (prev) setTimeout(() => setVirtualModeNotification(null), 1500);
+      setIsExitingNotification(!newMode);
+      if (prev) {
+        setTimeout(() => {
+          setVirtualModeNotification(null);
+          setIsExitingNotification(false); // reset after exit
+        }, 1500);
+      }
 
       if (newMode) {
         // Entering Virtual Mode
@@ -1009,19 +1017,27 @@ const MapWithTour = () => {
       {virtualModeNotification && (
         <div className="fixed top-2   left-0 right-0 z-[1100] flex justify-center pointer-events-none">
           <motion.div
-            initial={{ y: -40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -40, opacity: 0 }}
+            initial={{ y: -40, opacity: 0, filter: "blur(12px)" }}
+            animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+            exit={{ y: -40, opacity: 0, filter: "blur(10px)" }}
             transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className="backdrop-blur-md bg-[#0e0e0e]  rounded-full px-4 py-3 shadow-2xl text-white text-sm font-semibold pointer-events-auto"
+            className={`pointer-events-auto flex items-center gap-3 px-5 py-3 rounded-full shadow-lg backdrop-blur-lg border text-sm font-medium
+        ${
+          isExitingNotification
+            ? "bg-red-900/95 text-red-200 border-red-500/30"
+            : "bg-[#1a1a1a]/90 text-white border-white/10"
+        }
+      `}
           >
-            <span className="flex items-center gap-2">
-              <FiMapPin
-                className="text-white bg-blue-700 rounded-full p-1"
-                size={24}
-              />
-              {virtualModeNotification}
-            </span>
+            <FiMapPin
+              className={`rounded-full p-1.5 ${
+                isExitingNotification
+                  ? "text-red-200 bg-red-800/10"
+                  : "text-blue-500 bg-blue-500/10"
+              }`}
+              size={24}
+            />
+            <span>{virtualModeNotification}</span>
           </motion.div>
         </div>
       )}

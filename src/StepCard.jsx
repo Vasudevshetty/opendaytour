@@ -138,7 +138,7 @@ const StepCard = ({
         </div>
 
         {/* The actual card content div */}
-        <div className="bg-[#0e0e0e] rounded-4xl w-full pointer-events-auto px-1 flex flex-col relative overflow-hidden shadow-2xl">
+        <div className="bg-[#0e0e0e] rounded-4xl  w-full pointer-events-auto px-1 py-1 flex flex-col relative overflow-hidden shadow-2xl">
           {/* Header - Always visible */}
           <div className="flex items-center justify-between p-3 border-b border-gray-800">
             {/* Left: Spot Info */}
@@ -298,29 +298,33 @@ const StepCard = ({
                   </AnimatePresence>
                 </div>
                 {/* Navigation buttons - only if card is expanded AND in virtual mode */}{" "}
-                {isVirtualMode && (
-                  <div className="flex justify-between p-3 border-t border-gray-800 mt-1.5">
-                    <button
-                      onClick={onPrev}
-                      disabled={isFirst}
-                      className="px-4 py-2 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2 cursor-pointer"
-                    >
-                      <FiArrowLeft size={18} />
-                      <span>Previous</span>
-                    </button>
-                    <button
-                      onClick={onNext}
-                      disabled={isLast}
-                      className="px-4 py-2 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2 cursor-pointer"
-                    >
-                      <span>{isFinalStep ? "Finish Tour" : "Next"}</span>
-                      <FiArrowRight size={18} />
-                    </button>
-                  </div>
-                )}
               </motion.section>
             )}
           </AnimatePresence>
+          {isVirtualMode && (
+            <div
+              className={`flex justify-between p-3 border-t ${
+                !isVirtualMode || isCardExpanded ? "border-gray-800 mt-1.5" : ""
+              } `}
+            >
+              <button
+                onClick={onPrev}
+                disabled={isFirst}
+                className="px-6 py-3 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2 cursor-pointer"
+              >
+                <FiArrowLeft size={18} />
+                <span>Previous</span>
+              </button>
+              <button
+                onClick={onNext}
+                disabled={isLast}
+                className="px-6 py-3 rounded-full bg-green-600 hover:bg-green-500 text-white font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2 cursor-pointer"
+              >
+                <span>{isFinalStep ? "Finish Tour" : "Next"}</span>
+                <FiArrowRight size={18} />
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
     </>
