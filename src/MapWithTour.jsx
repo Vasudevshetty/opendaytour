@@ -257,8 +257,7 @@ const MapWithTour = () => {
 
       for (let i = 0; i < steps.length; i++) {
         const distance = haversineDistance(userLocation, steps[i].coordinate);
-        if (distance < 50) {
-          // MODIFIED: Geofence radius to 50
+        if (distance < 5) {
           if (distance < minDistance) {
             minDistance = distance;
             newGeofencedIndex = i;
@@ -385,7 +384,7 @@ const MapWithTour = () => {
           document.querySelectorAll(".mapboxgl-popup-content").forEach((el) => {
             el.style.background = "#0e0e0e";
             el.style.color = "#fff";
-            el.style.borderRadius = "0.75rem";
+            el.style.borderRadius = "1rem";
             el.style.boxShadow = "0 4px 16px rgba(0,0,0,0.2)";
             el.style.padding = isActive ? "0.5rem 1rem" : "0.4rem 0.75rem";
             el.style.fontFamily = "'DM Sans', sans-serif";
@@ -1012,16 +1011,16 @@ const MapWithTour = () => {
     <div className="relative w-full h-screen font-dm-sans">
       {/* Virtual Mode Notification */}
       {virtualModeNotification && (
-        <div className="fixed top-4 left-0 right-0 z-[1100] flex justify-center pointer-events-none">
+        <div className="fixed top-2 left-0 right-0 z-[1100] flex justify-center pointer-events-none">
           <motion.div
             initial={{ y: -40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -40, opacity: 0 }}
             transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-            className="backdrop-blur-md bg-[#0e0e0e] border border-[#444444] rounded-full px-8 py-3 shadow-2xl text-cyan-400 text-sm font-semibold pointer-events-auto"
+            className="backdrop-blur-md bg-[#0e0e0e]  rounded-full px-8 py-3 shadow-2xl text-white text-sm font-semibold pointer-events-auto"
           >
             <span className="flex items-center gap-2">
-              <FiMapPin className="text-cyan-400" size={16} />
+              <FiMapPin className="text-white" size={16} />
               {virtualModeNotification}
             </span>
           </motion.div>
@@ -1132,7 +1131,7 @@ const MapWithTour = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
-            className="relative backdrop-blur-md bg-[#0e0e0e] border border-red-500/50 rounded-2xl w-full mx-4 max-w-md py-3 px-6 pointer-events-auto flex items-center justify-between shadow-2xl"
+            className="relative backdrop-blur-md bg-[#0e0e0e] border border-red-500/50 rounded-full w-full mx-4 max-w-md py-3 px-6 pointer-events-auto flex items-center justify-between shadow-2xl"
           >
             <div className="flex items-center gap-3">
               <div className="bg-red-500/20 p-2 rounded-full">

@@ -92,14 +92,31 @@ const StepCard = ({
         <div className="absolute bottom-[calc(100%+8px)] flex flex-col items-end gap-2 pointer-events-auto z-40 right-0 w-full pr-1">
           {onRecenter && !isVirtualMode && (
             <motion.button
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.3 }}
-              className="w-10 h-10 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all duration-200"
+              className="w-11 h-11 flex items-center justify-center bg-black hover:bg-gray-800 text-red-500 rounded-full shadow-lg transition-all duration-200"
               onClick={onRecenter}
               title="Recenter Map"
             >
-              <FiNavigation size={20} />
+              {/* Target-style icon */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="w-6 h-6"
+                viewBox="0 0 24 24"
+                fill="black"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="3" />
+                <circle cx="12" cy="12" r="8" />
+                <line x1="12" y1="2" x2="12" y2="6" />
+                <line x1="12" y1="18" x2="12" y2="22" />
+                <line x1="2" y1="12" x2="6" y2="12" />
+                <line x1="18" y1="12" x2="22" y2="12" />
+              </svg>
             </motion.button>
           )}
           <motion.button
@@ -122,7 +139,7 @@ const StepCard = ({
         </div>
 
         {/* The actual card content div */}
-        <div className="bg-[#0e0e0e] rounded-4xl w-full pointer-events-auto flex flex-col relative overflow-hidden shadow-2xl">
+        <div className="bg-[#0e0e0e] rounded-4xl w-full pointer-events-auto px-1 flex flex-col relative overflow-hidden shadow-2xl">
           {/* Header - Always visible */}
           <div className="flex items-center justify-between p-3 border-b border-gray-800">
             {/* Left: Spot Info */}
@@ -156,7 +173,7 @@ const StepCard = ({
             {/* Right: Action Buttons (Reset, Expand/Collapse) */}
             <div className="flex items-center gap-1.5">
               <button
-                className="w-9 h-9 flex items-center justify-center bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-full transition-all duration-200"
+                className="w-9 h-9 flex items-center justify-center bg-gray-700 hover:bg-gray-500 text-gray-100 rounded-full transition-all duration-200"
                 onClick={onResetTour}
                 title="Reset Tour"
               >
@@ -184,16 +201,16 @@ const StepCard = ({
               opacity: isCardExpanded ? 1 : 0,
               paddingTop: isCardExpanded ? "1rem" : 0, // Corresponds to p-4
             }}
-            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden" // Crucial for height animation
           >
             {isCardExpanded && (
               <div className="px-4 py-4">
                 {/* Step Name - Moved here for expanded view */}
-                <h2 className="text-xl font-bold mb-2 text-center text-gray-100 leading-tight">
+                <h2 className="text-[1.35rem] font-bold mb-2 text-center text-gray-100 leading-tight">
                   {step.name}
                 </h2>
-                <p className="text-gray-300 mb-3 text-center text-sm leading-relaxed">
+                <p className="text-gray-300 mb-3 text-center text-xs leading-relaxed">
                   {step.description}
                 </p>
 
@@ -226,6 +243,16 @@ const StepCard = ({
                     scale: isImageSectionExpanded ? 1 : 0.95,
                     marginTop:
                       isImageSectionExpanded && images.length ? "0.5rem" : 0, // Reduced margin
+                  }}
+                  exit={{
+                    opacity: 0,
+                    height: 0,
+                    scale: 0.95,
+                    transition: {
+                      height: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+                      opacity: { duration: 0.8, ease: [0.4, 0, 0.2, 1] },
+                      scale: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+                    },
                   }}
                   transition={{
                     height: { duration: 0.5, ease: [0.4, 0, 0.2, 1] },
