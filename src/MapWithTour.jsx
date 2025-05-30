@@ -505,17 +505,6 @@ const MapWithTour = () => {
       // Update existing user location popup or create a new one
       if (userLocationPopupRef.current) {
         userLocationPopupRef.current.setLngLat(userLocation);
-      } else {
-        userLocationPopupRef.current = new mapboxgl.Popup({
-          closeButton: false,
-          closeOnClick: false,
-          offset: 30,
-        })
-          .setLngLat(userLocation)
-          .setHTML(
-            `<div style="color:#ef4444;border-radius:1rem;padding:0.5rem 1.2rem;font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:700;min-width:90px;text-align:center;border:none;box-shadow:none;">You are here</div>`
-          )
-          .addTo(mapRef.current);
       }
     } else {
       // If userLocation becomes null, remove the marker and its popup
