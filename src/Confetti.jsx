@@ -22,7 +22,7 @@ const Confetti = ({ onClose }) => {
     <AnimatePresence>
       <motion.div
         ref={overlayRef}
-        className="fixed inset-0 z-50 flex justify-center items-center bg-black/40 backdrop-blur-sm font-dm-sans tracking-tight"
+        className="fixed inset-0 z-50 flex justify-center items-center bg-black/20 backdrop-blur-md font-dm-sans tracking-tight"
         style={{ pointerEvents: "auto" }}
         onClick={handleOverlayClick}
         initial={{ opacity: 1 }}
@@ -35,27 +35,27 @@ const Confetti = ({ onClose }) => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 40 }}
           transition={{ delay: 0.1, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-          className="pointer-events-auto px-10 py-6 rounded-3xl shadow-2xl border border-orange-200/30 bg-gradient-to-br from-white via-orange-50 to-blue-50 backdrop-blur-lg max-w-md w-full mx-6 flex flex-col items-center relative overflow-hidden"
+          className="pointer-events-auto px-10 py-6 rounded-3xl shadow-2xl border border-gray-700 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 backdrop-blur-lg max-w-md w-full mx-6 flex flex-col items-center relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 via-transparent to-blue-500/10 rounded-3xl"></div>
           <div className="relative z-10 flex flex-col items-center">
-            <div className="w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-orange-400 to-blue-600 flex items-center justify-center shadow-lg">
+            <div className="w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-blue-500/80 to-blue-700/80 flex items-center justify-center shadow-lg">
               <span role="img" aria-label="confetti" style={{ fontSize: 40 }}>
                 🎉
               </span>
             </div>
-            <h2 className="text-xl font-black mb-1 text-center text-black tracking-tight leading-tight">
-              Tour Complete!
+            <h2 className="text-xl font-black mb-1 text-center text-white tracking-tight leading-tight">
+              Tour Completed!
             </h2>
-            <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-orange-600 via-blue-700 to-orange-500 bg-clip-text text-transparent tracking-tight leading-tight">
-              Congratulations
+            <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-orange-400 via-blue-400 to-orange-300 bg-clip-text text-transparent tracking-tight leading-tight">
+              Congratulations!
             </h2>
-            <p className="text-base text-gray-600 text-center py-4 font-medium leading-tight">
+            <p className="text-base text-gray-300 text-center py-4 font-medium leading-tight">
               You have finished the campus tour. We hope you enjoyed the
               journey!
             </p>
-            <div className="flex items-center gap-2 px-4 py-2 my-2 rounded-full bg-gradient-to-r from-orange-100 to-blue-100 border border-orange-200">
-              <span className="text-sm text-gray-700 font-semibold">
+            <div className="flex items-center gap-2 px-4 py-2 my-2 rounded-full bg-gradient-to-r from-orange-900/40 to-blue-900/40 border border-orange-700">
+              <span className="text-sm text-gray-200 font-semibold">
                 Thank you for visiting
               </span>
               <span className="text-lg">🎊</span>

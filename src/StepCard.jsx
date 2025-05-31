@@ -60,12 +60,28 @@ const StepCard = ({
       timer = setTimeout(() => {
         setIsCardExpanded(false);
         setIsImageSectionExpanded(false); // Reset image section when collapsing
-      }, 3000); // Auto-collapse after 3 seconds
+      }, 3000); // Auto-collapse after 5 seconds
     }
     return () => {
       clearTimeout(timer);
     };
   }, [isCardExpanded, isHovering, isVirtualMode, setIsCardExpanded]);
+
+  // Open card initially, then auto-close after 3 seconds
+  useEffect(() => {
+    if (isCardExpanded) {
+      const timer = setTimeout(() => {
+        setIsCardExpanded(false);
+        setIsImageSectionExpanded(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, []); // Only run on mount
+
+  // Open card initially on mount
+  useEffect(() => {
+    setIsCardExpanded(true);
+  }, [setIsCardExpanded]);
 
   const handlePrevImage = (e) => {
     e.stopPropagation();
@@ -121,8 +137,15 @@ const StepCard = ({
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: onRecenter ? 0.3 : 0.2, duration: 0.3 }} // Delay slightly more if recenter is present
-            className="h-10 px-4 rounded-full bg-gradient-to-r from-blue-500 to-blue-800 hover:bg-blue-600 text-white font-semibold text-sm shadow-lg transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
+            transition={{ delay: onRecenter ? 0.3 : 0.2, duration: 0.3 }}
+            className={`h-10 px-3 rounded-full font-medium text-xs  transition-all duration-200 flex items-center justify-center gap-2 tracking-tight cursor-pointer
+              ${
+                isVirtualMode
+                  ? "bg-[linear-gradient(to_right,#ed8936,#dd6b20)] text-white  transition-colors duration-300 ease-in-out"
+                  : "bg-[linear-gradient(to_right,#4299e1,#3182ce)] text-white  transition-colors duration-300 ease-in-out"
+              }
+
+            `}
             onClick={() => {
               setIsCardExpanded(true);
               setIsImageSectionExpanded(false); // Reset image section when toggling card
@@ -132,13 +155,19 @@ const StepCard = ({
           >
             <FaStreetView size={18} />
             <span>
-              {isVirtualMode ? "Exit College View" : "Explore College"}
+              {isVirtualMode ? (
+                <span className="font-medium tracking-tight">
+                  Exit College View
+                </span>
+              ) : (
+                "Explore College"
+              )}
             </span>
           </motion.button>
         </div>
 
         {/* The actual card content div */}
-        <div className="bg-[#0e0e0e] rounded-4xl w-full pointer-events-auto px-1 flex flex-col relative overflow-hidden shadow-2xl">
+        <div className="bg-[#0e0e0e] rounded-4xl  w-full pointer-events-auto px-1 py-1 flex flex-col relative overflow-hidden shadow-2xl">
           {/* Header - Always visible */}
           <div className="flex items-center justify-between p-3 border-b border-gray-800">
             {/* Left: Spot Info */}
@@ -298,29 +327,33 @@ const StepCard = ({
                   </AnimatePresence>
                 </div>
                 {/* Navigation buttons - only if card is expanded AND in virtual mode */}{" "}
-                {isVirtualMode && (
-                  <div className="flex justify-between p-3 border-t border-gray-800 mt-1.5">
-                    <button
-                      onClick={onPrev}
-                      disabled={isFirst}
-                      className="px-4 py-2 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2 cursor-pointer"
-                    >
-                      <FiArrowLeft size={18} />
-                      <span>Previous</span>
-                    </button>
-                    <button
-                      onClick={onNext}
-                      disabled={isLast}
-                      className="px-4 py-2 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2 cursor-pointer"
-                    >
-                      <span>{isFinalStep ? "Finish Tour" : "Next"}</span>
-                      <FiArrowRight size={18} />
-                    </button>
-                  </div>
-                )}
               </motion.section>
             )}
           </AnimatePresence>
+          {isVirtualMode && (
+            <div
+              className={`flex justify-between p-3 border-t ${
+                !isVirtualMode || isCardExpanded ? "border-gray-800 mt-1.5" : ""
+              } `}
+            >
+              <button
+                onClick={onPrev}
+                disabled={isFirst}
+                className="px-6 py-3 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-300 font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2 cursor-pointer"
+              >
+                <FiArrowLeft size={18} />
+                <span>Previous</span>
+              </button>
+              <button
+                onClick={onNext}
+                disabled={isLast}
+                className="px-6 py-3 rounded-full bg-green-600 hover:bg-green-500 text-white font-semibold shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2 cursor-pointer"
+              >
+                <span>{isFinalStep ? "Finish Tour" : "Next"}</span>
+                <FiArrowRight size={18} />
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
     </>
