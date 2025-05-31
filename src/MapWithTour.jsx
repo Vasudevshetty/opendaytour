@@ -153,7 +153,7 @@ const MapWithTour = () => {
     if (showWelcome) {
       const timer = setTimeout(() => {
         setShowWelcome(false);
-      }, 2500); // 2.5 seconds
+      }, 3000); // 2.5 seconds
       return () => clearTimeout(timer); // Cleanup timer
     }
   }, [showWelcome]);
@@ -163,7 +163,7 @@ const MapWithTour = () => {
     if (showConfetti) {
       const timer = setTimeout(() => {
         setShowConfetti(false);
-      }, 2500); // 2.5 seconds
+      }, 3000); // 2.5 seconds
       return () => clearTimeout(timer); // Cleanup timer
     }
   }, [showConfetti]);

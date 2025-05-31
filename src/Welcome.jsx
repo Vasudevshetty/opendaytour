@@ -20,58 +20,40 @@ const Welcome = ({ onClose }) => {
 
   return (
     <AnimatePresence>
-      <motion.div
-        ref={overlayRef}
-        className="fixed inset-0 z-50 flex justify-center items-center bg-black/20 backdrop-blur-md font-dm-sans tracking-tight"
-        style={{ pointerEvents: "auto" }}
-        onClick={handleOverlayClick}
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
-      >
+      {
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 40 }}
-          transition={{ delay: 0.1, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-          className="pointer-events-auto px-10 py-6 rounded-3xl shadow-2xl border border-gray-700 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 backdrop-blur-lg max-w-md w-full mx-6 flex flex-col items-center relative overflow-hidden"
+          initial={{ y: -40, opacity: 0, filter: "blur(12px)" }}
+          animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+          exit={{ y: -40, opacity: 0, filter: "blur(10px)" }}
+          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+          className="fixed top-4 left-0 right-0 z-[1100] flex justify-center pointer-events-none"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-400/10 via-transparent to-blue-500/10 rounded-3xl"></div>
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-16 h-16 mb-4 rounded-full bg-gradient-to-br from-orange-500 to-blue-700 flex items-center justify-center shadow-lg">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="white">
+          <div className="pointer-events-auto flex items-center gap-3 px-4 py-2 rounded-full backdrop-blur-lg border border-gray-700 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 max-w-sm w-full mx-4 relative">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-blue-700 flex items-center justify-center shadow">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
                 <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
               </svg>
             </div>
-            <h2 className="text-xl font-black mb-1 text-center text-white tracking-tight leading-tight">
-              Welcome to
-            </h2>
-            <h2 className="text-3xl font-bold text-center bg-gradient-to-r from-orange-400 via-blue-400 to-orange-300 bg-clip-text text-transparent tracking-tight leading-tight">
-              JSS STU
-            </h2>
-            <p className="text-base text-gray-300 text-center py-4 font-medium leading-tight">
-              JSS Science and Technology University. Formerly (Sri
-              Jayachamarajendra College of Engineering (SJCE))
-            </p>
-            <p className="text-lg text-blue-200 text-center my-2 font-semibold">
-              Mysuru Campus
-            </p>
-            <div className="flex items-center gap-2 px-4 py-2 my-2 rounded-full bg-gradient-to-r from-orange-900/40 to-blue-900/40 border border-orange-700">
-              <span className="text-sm text-gray-200 font-semibold">
-                Your adventure begins now
-              </span>
-              <span className="text-lg">🚩</span>
+            <div className="flex flex-col items-start flex-1">
+              <h2 className="text-base font-bold text-white tracking-tight leading-tight mb-0.5">
+                Welcome to{" "}
+                <span className="bg-gradient-to-r from-orange-400 via-blue-400 to-orange-300 bg-clip-text text-transparent">
+                  JSS STU
+                </span>
+              </h2>
+              <p className="text-xs text-gray-300 font-medium leading-tight mt-0.5">
+                Let &apos;s start exploring!
+              </p>
             </div>
             <button
-              className="mt-4 px-6 py-2 w-[90%] bg-gradient-to-r from-cyan-700 via-blue-700 to-blue-600 text-white rounded-full font-bold shadow hover:from-cyan-800 hover:to-orange-700 transition-all duration-200 pointer-events-auto cursor-pointer border border-cyan-500/40 focus:outline-none focus:ring-2 focus:ring-orange-400/40"
+              className="ml-3 px-3 py-1.5 bg-gradient-to-r from-cyan-700 via-blue-700 to-blue-600 text-white rounded-full font-bold shadow hover:from-cyan-800 hover:to-orange-700 transition-all duration-200 border border-cyan-500/40 focus:outline-none focus:ring-2 focus:ring-orange-400/40 text-xs pointer-events-auto"
               onClick={onClose}
             >
-              Start Tour
+              Start
             </button>
           </div>
         </motion.div>
-      </motion.div>
+      }
     </AnimatePresence>
   );
 };

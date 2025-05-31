@@ -60,12 +60,28 @@ const StepCard = ({
       timer = setTimeout(() => {
         setIsCardExpanded(false);
         setIsImageSectionExpanded(false); // Reset image section when collapsing
-      }, 3000); // Auto-collapse after 3 seconds
+      }, 5000); // Auto-collapse after 5 seconds
     }
     return () => {
       clearTimeout(timer);
     };
   }, [isCardExpanded, isHovering, isVirtualMode, setIsCardExpanded]);
+
+  // Open card initially, then auto-close after 3 seconds
+  useEffect(() => {
+    if (isCardExpanded) {
+      const timer = setTimeout(() => {
+        setIsCardExpanded(false);
+        setIsImageSectionExpanded(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, []); // Only run on mount
+
+  // Open card initially on mount
+  useEffect(() => {
+    setIsCardExpanded(true);
+  }, [setIsCardExpanded]);
 
   const handlePrevImage = (e) => {
     e.stopPropagation();
