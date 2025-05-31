@@ -943,7 +943,7 @@ const MapWithTour = () => {
     setIsVirtualMode((prev) => {
       const newMode = !prev;
       setVirtualModeNotification(
-        newMode ? "Entered College View" : "Exited College View"
+        newMode ? "You are in college view" : "Exited College View"
       );
       setIsExitingNotification(!newMode);
       if (prev) {
