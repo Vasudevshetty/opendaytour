@@ -4,7 +4,7 @@ ENV NODE_ENV=production
 
 # Install dependencies
 COPY package*.json ./
-RUN npm ci --silent
+RUN npm ci --silent --include=dev
 
 # Copy source and build
 COPY . .
